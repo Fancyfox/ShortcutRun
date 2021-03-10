@@ -1,4 +1,4 @@
-import WeChatManager from "../../WeChat/WeChatManager";
+import WeChatManager from "../../Util/WeChatManager";
 import GameDefine from "./GameDefine";
 
 

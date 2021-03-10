@@ -1,4 +1,4 @@
-import WeChatManager from "../../WeChat/WeChatManager";
+import WeChatManager from "../../Util/WeChatManager";
 
 export default class LoadingPage extends Laya.Script {
     private uiBox: Laya.Box;

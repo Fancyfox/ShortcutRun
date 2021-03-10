@@ -40,3 +40,14 @@ P DDDDFB9E vslider$bar.png
 P 01BAE7F5 vslider.png
 D Prefabs
 R 9ACF1D6D Home.prefab
+D textures
+R 29CCBF7C arrow_left_right.png
+P 96BBCA0A audio.png
+P EE4E14AE close.png
+P C392279F currency.png
+P 7EF43E9A hand.png
+P 96776528 settings.png
+P 3B10729F ToggleOff.png
+P 3A76AD07 ToggleOn.png
+P E9DC29D7 vibration_off.png
+P DFF63DB1 vibration_on.png

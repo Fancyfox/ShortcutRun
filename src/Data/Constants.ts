@@ -33,6 +33,7 @@ export class Constants {
     //Save
     public static GameConfigID = 'SHORTCOU_RUN';
     public static LevelTick = 'level_tick';
+    public static AudioConfigID = 'audioConfigID';
 
 
 

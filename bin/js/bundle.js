@@ -31,6 +31,7 @@
     };
     Constants.GameConfigID = 'SHORTCOU_RUN';
     Constants.LevelTick = 'level_tick';
+    Constants.AudioConfigID = 'audioConfigID';
 
     class Configuration {
         constructor() {
@@ -68,6 +69,318 @@
         }
     }
     Configuration._instance = null;
+
+    class RandomUtil {
+        static Random(min = 0, max = 1) {
+            return min + (max - min) * Math.random();
+        }
+        static RandomInteger(min = 0, max = 1) {
+            let ran = this.Random(min, max);
+            return Math.floor(ran);
+        }
+        static Shuffle(array) {
+            for (let len = array.length, i = len - 1; i >= 0; i--) {
+                let ran = Math.floor(Math.random() * i);
+                let temp = array[ran];
+                array[ran] = array[i];
+                array[i] = temp;
+            }
+            return array;
+        }
+    }
+
+    const templateId_tt = "";
+    const videoAdUnitId_wx = "";
+    const videoAdUnitId_tt = "";
+    class SdkUitl {
+        static share(isRecord = false, succesCallback, failCallback) {
+            if (Laya.Browser.onWeiXin) {
+                wx.shareAppMessage && wx.shareAppMessage({
+                    title: "欢乐搬砖人"
+                });
+                return;
+            }
+            if (Laya.Browser.window.tt) {
+                if (!tt.shareAppMessage) {
+                    return;
+                }
+                let i = RandomUtil.RandomInteger(0, this.images.length);
+                let title = this.images[i]['des' + RandomUtil.RandomInteger(1, 4)];
+                let imageUrl = this.images[i].imageUrlId;
+                if (!isRecord) {
+                    tt.shareAppMessage({
+                        title: title,
+                        templateId: templateId_tt,
+                        imageUrl: imageUrl,
+                        query: "",
+                        success: () => {
+                        },
+                        fail: () => {
+                        }
+                    });
+                }
+                else {
+                    console.log(this._videoPath, "this.videoPath");
+                    tt.shareAppMessage({
+                        channel: "video",
+                        title: title,
+                        query: "",
+                        templateId: templateId_tt,
+                        extra: {
+                            videoPath: this._videoPath,
+                            videoTopics: ["动物经纪人"],
+                            hashtag_list: ["动物经纪人"]
+                        },
+                        success: (res) => {
+                            console.log("录屏发布成功", res);
+                            if (succesCallback) {
+                                succesCallback();
+                                this._videoPath = "";
+                            }
+                        },
+                        fail: (res) => {
+                            if (!isRecord) {
+                                return;
+                            }
+                            let errs = res.errMsg.split(":");
+                            console.log(errs[1], "errs录屏发布失败");
+                            if (errs[1].search("cancel") == -1) {
+                                if (failCallback) {
+                                    failCallback();
+                                }
+                                return;
+                            }
+                            console.log("取消发布录屏");
+                            if (failCallback) {
+                                failCallback();
+                            }
+                        }
+                    });
+                }
+                return;
+            }
+        }
+        static passiveShare() {
+            if (Laya.Browser.onWeiXin) {
+                wx.showShareMenu && wx.showShareMenu({
+                    success: (res) => {
+                        console.log('开启被动转发成功!');
+                    },
+                    fail: (res) => {
+                        console.log(res);
+                        console.log('开启被动转发失败!');
+                    }
+                });
+                wx.onShareAppMessage(function () {
+                    let i = RandomUtil.RandomInteger(0, this.images.length);
+                    var share = {
+                        title: this.images[i]['des' + RandomUtil.RandomInteger(1, 4)],
+                        imageUrlId: this.images[i].imageUrlId,
+                        imageUrl: this.images[i].imageUrl
+                    };
+                }.bind(this));
+                return;
+            }
+            if (Laya.Browser.window.tt) {
+                tt.showShareMenu && tt.showShareMenu({
+                    withShareTicket: true,
+                    success: () => {
+                        tt.onShareAppMessage(() => {
+                            let i = RandomUtil.RandomInteger(0, this.images.length);
+                            var share = {
+                                title: this.images[i]['des' + RandomUtil.RandomInteger(1, 4)],
+                                imageUrl: this.images[i].imageUrl,
+                                query: ""
+                            };
+                        });
+                    }
+                });
+            }
+            return;
+        }
+        static createVideoRewardAd() {
+            if (Laya.Browser.onWeiXin) {
+                if (!wx.createRewardedVideoAd) {
+                    return;
+                }
+                let videoRewardAd = wx.createRewardedVideoAd({
+                    adUnitId: videoAdUnitId_wx
+                });
+                videoRewardAd.onLoad && videoRewardAd.onLoad(function (res) {
+                    console.log("视频广告加载完成", res.errMsg);
+                });
+                videoRewardAd.onError && videoRewardAd.onError(function (res) {
+                    console.log("视频广告加载失败", res.errMsg);
+                    videoRewardAd.load && videoRewardAd.load();
+                });
+                videoRewardAd.onClose && videoRewardAd.onClose(this.handler.bind(this));
+                return;
+            }
+            if (Laya.Browser.window.tt) {
+                if (!tt.createRewardedVideoAd) {
+                    return;
+                }
+                this._videoRewardAd = wx.createRewardedVideoAd({
+                    adUnitId: videoAdUnitId_tt
+                });
+                this._videoRewardAd.onLoad && this._videoRewardAd.onLoad(function (res) {
+                    console.log("视频广告加载完成", res.errMsg);
+                });
+                this._videoRewardAd.onError && this._videoRewardAd.onError(function (res) {
+                    console.log("视频广告加载失败", res.errMsg);
+                    this._videoRewardAd.load && this._videoRewardAd.load();
+                });
+                this._videoRewardAd.onClose && this._videoRewardAd.onClose(this.handler.bind(this));
+            }
+        }
+        static closeHandler(res) {
+            if (res && res.isEnded || res === undefined) {
+                console.log("给予奖励");
+                this.videoSuccessCallback && this.videoSuccessCallback();
+            }
+            else {
+                console.log("未看完广告");
+                this.videoFailCallback && this.videoFailCallback();
+            }
+        }
+        static setVideoRewardAdCloseEvent(succesCallback, failCallback) {
+            this.videoSuccessCallback = succesCallback;
+            this.videoFailCallback = failCallback;
+        }
+        static showVideoReward(successCallback, failCallback) {
+            if (!this._videoRewardAd) {
+                return;
+            }
+            if (!this._videoRewardAd.show) {
+                return;
+            }
+            this._videoRewardAd.show().then(() => {
+                console.log("视频广告显示成功，暂停背景音乐");
+                SdkUitl.setVideoRewardAdCloseEvent(successCallback, failCallback);
+            }, err => {
+                console.log("视频广告显示失败", err);
+                this._videoRewardAd.load();
+            });
+        }
+        static playMusic(name, loop = true) {
+            if (Laya.Browser.onWeiXin) {
+                if (wx.createInnerAudioContext) {
+                    this._audio = wx.createInnerAudioContext();
+                    this._audio.src = `subPackage/sub2/Audio/Effect/${name}.mp3`;
+                    this._audio.autoplay = true;
+                    this._audio.loop = true;
+                    this._audio.play();
+                }
+                return;
+            }
+            if (Laya.Browser.window.tt) {
+                if (tt.createInnerAudioContext) {
+                    this._audio = tt.createInnerAudioContext();
+                    this._audio.src = `subPackage/sub2/Audio/Effect/${name}.mp3`;
+                    ;
+                    this._audio.autoplay = true;
+                    this._audio.loop = true;
+                    this._audio.play();
+                }
+            }
+            let url = `subPackage/sub2/Audio/Effect/${name}.mp3`;
+            let bgmLoop = loop ? 0 : 1;
+            Laya.SoundManager.playMusic(url, bgmLoop);
+        }
+    }
+    SdkUitl.images = [
+        {
+            des1: '爆料！某主播带货竟强买强卖，快来看看~',
+            des2: '谁才是直播界带货一哥？',
+            des3: '招募主播，直播带货，生意蒸蒸日上！',
+            imageUrlId: 'M9YkQjdARgCfpupY+bmNWg==',
+            imageUrl: 'https://mmocgame.qpic.cn/wechatgame/svmLHWrwdtCYgLpZSS63QZgMVfWXicOgOzkRYs9U4MWJvcqhRlkCc5RX6yYzNftB3/0'
+        },
+        {
+            des1: '音乐奇才，无人倾听，经纪人们快来帮帮他~',
+            des2: '情歌天王，千万人气，为何深夜独自神伤？',
+            des3: '流浪歌手到亚洲歌王，阿呆的梦想！',
+            imageUrlId: 'tG+4Q4WqTjGtAYjdg8YDNA==',
+            imageUrl: 'https://mmocgame.qpic.cn/wechatgame/svmLHWrwdtCXN4yFyb3E95qdaYVoTxia4fOntH6sDskhelq7sK7CPlCgKunhQ3keb/0'
+        },
+        {
+            des1: '猪二蛋：欢迎来的我的直播间！',
+            des2: '打造属于你自己的直播天团吧！',
+            des3: '大胃王猪二蛋高调路过，聘请他来直播吧~',
+            imageUrlId: 'xbKpyKtLQAi4ieYtjqNVUw==',
+            imageUrl: 'https://mmocgame.qpic.cn/wechatgame/svmLHWrwdtDVs2rjY0ZJKXlnhB8STMuHiaibI7C7iaSSvgjjHDmToalpa7uHzfiaKuibx/0'
+        }
+    ];
+    SdkUitl._videoPath = "";
+    SdkUitl.handler = SdkUitl.closeHandler;
+    SdkUitl._audio = null;
+
+    class AudioManager {
+        constructor() {
+            this.audioInfo = null;
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new AudioManager();
+            }
+            return this._instance;
+        }
+        getAudioData() {
+            return this.audioInfo;
+        }
+        loadFromCache() {
+            const audioInfo = Configuration.instance().getConfigData(Constants.AudioConfigID);
+            if (audioInfo) {
+                this.audioInfo = JSON.parse(audioInfo);
+            }
+            else {
+                this._generateAudio();
+            }
+            console.log("loadFromCache");
+        }
+        saveAudioInfoToCache() {
+            const data = JSON.stringify(this.audioInfo);
+            Configuration.instance().setConfigData(Constants.AudioConfigID, data);
+        }
+        _generateAudio() {
+            this.audioInfo = {
+                musicMute: false,
+                effectMute: false,
+                musicVolume: 0.5,
+                effectVolume: 0.5
+            };
+            this.saveAudioInfoToCache();
+        }
+        playMusic(name) {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+                SdkUitl.playMusic(name, true);
+            }
+        }
+        resumeMusic() {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+            }
+        }
+        pasueMusic() {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+            }
+        }
+        stopMusic() {
+        }
+        setMusicVolume(volume) {
+        }
+        playEffect(name) {
+            if (this.audioInfo && !this.audioInfo.effectMute) {
+                const path = `subPackage/sub2/Audio/Effect/${name}.mp3`;
+                console.log(path, "path");
+                Laya.SoundManager.playSound(path);
+            }
+        }
+        stopAllEffects() {
+        }
+        setEffectVolume(volume) {
+        }
+    }
+    AudioManager._instance = null;
 
     var GameState;
     (function (GameState) {
@@ -540,6 +853,7 @@
                     this.playerMove.y -= this._decreaseDownspeed();
                     this._moveForward();
                     if (this.juageWaterDistance()) {
+                        AudioManager.instance().playEffect("FallInWater");
                         MiniGameManager.instance().EndGame();
                     }
                     break;
@@ -638,6 +952,7 @@
                             }
                             else {
                                 this.changePlayerState(CharacterAnimation.Jump);
+                                AudioManager.instance().playEffect("Jump");
                             }
                             break;
                         case "Turn_45_L":
@@ -665,6 +980,7 @@
                             }
                             else {
                                 this.changePlayerState(CharacterAnimation.Jump);
+                                AudioManager.instance().playEffect("Jump");
                             }
                             break;
                         case "plank":
@@ -709,7 +1025,7 @@
         }
         juageBlankDistance(point) {
             let distance_y = this.player.transform.localPositionY - point.y;
-            return distance_y <= 0.1;
+            return distance_y <= 0.05;
         }
         _addPlankToPlayer() {
             this.cube_count++;
@@ -724,6 +1040,7 @@
             let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
             cube.transform.rotation = this.blank_point.transform.rotation;
             this.cube_array.push(cube);
+            AudioManager.instance().playEffect("Collect");
         }
         _popPlankToRoad() {
             if (!this._canPop) {
@@ -742,6 +1059,7 @@
             Laya.timer.once(200, this, () => {
                 this._canPop = true;
             });
+            AudioManager.instance().playEffect("Put");
         }
     }
 
@@ -1917,6 +2235,7 @@
         onAwake() {
             let level = this.loadLevelFromCache();
             GameManager.instance().loadLevel(level);
+            AudioManager.instance().loadFromCache();
         }
         loadLevelFromCache() {
             const level = Configuration.instance().getConfigData(Constants.LevelTick);

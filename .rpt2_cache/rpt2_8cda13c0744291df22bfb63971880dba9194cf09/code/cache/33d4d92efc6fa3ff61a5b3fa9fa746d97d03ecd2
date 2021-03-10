@@ -1,0 +1,8 @@
+{
+  "code": "import GameData from \"../script/Singleton/GameData\";\r\nimport Obj from \"./Obj\";\r\nexport default class Charactor extends Obj {\r\n    constructor() {\r\n        super(...arguments);\r\n        this.forward_speed = 0.15;\r\n        this.down_speed = 0.24;\r\n        this.cube_count = 0;\r\n        this.cube_array = [];\r\n        this.cube_height = 0.16;\r\n        this.isRayCast = false;\r\n    }\r\n    onAwake() {\r\n        super.onAwake();\r\n        this.player = this.owner;\r\n        this.animator = this.player.getComponent(Laya.Animator);\r\n    }\r\n    onStart() {\r\n        super.onStart();\r\n        this.initScene3d();\r\n    }\r\n    initScene3d() {\r\n        this.physicsSimulation = GameData.scene3d.physicsSimulation;\r\n    }\r\n}\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameData.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Entity/Obj.ts"
+  ]
+}

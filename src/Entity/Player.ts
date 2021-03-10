@@ -1,5 +1,6 @@
 import { MiniGameManager } from "../Data/MiniGameManager";
 import Vector3 from "../script/Extensions/Vector3";
+import AudioManager from "../script/Singleton/AudioManager";
 import EventManager from "../script/Singleton/EventManager";
 import GameData from "../script/Singleton/GameData";
 import GameDefine, { CharacterAnimation, CharacterState, EventName, GameState } from "../script/Singleton/GameDefine";
@@ -138,6 +139,7 @@ export default class Player extends Charactor {
                 this.playerMove.y -= this._decreaseDownspeed();
                 this._moveForward();
                 if (this.juageWaterDistance()) {
+                    AudioManager.instance().playEffect("FallInWater");
                     MiniGameManager.instance().EndGame();
                 }
                 break;
@@ -251,13 +253,14 @@ export default class Player extends Charactor {
                             this.changePlayerState(CharacterAnimation.Planche);
                         } else {
                             this.changePlayerState(CharacterAnimation.Jump);
+                            AudioManager.instance().playEffect("Jump");
                         }
                         break;
                     case "Turn_45_L":
                     case "Turn_45_R":
                     case "Turn_45_short_L":
                     case "Turn_45_short_R":
-                   // case "plank_road":
+                    // case "plank_road":
                     case "plank":
                         if (this.cube_count > 0) {
                             this.changePlayerState(CharacterAnimation.Carrying);
@@ -278,6 +281,7 @@ export default class Player extends Charactor {
                             this.changePlayerState(CharacterAnimation.Planche);
                         } else {
                             this.changePlayerState(CharacterAnimation.Jump);
+                            AudioManager.instance().playEffect("Jump");
                         }
                         break;
                     case "plank":
@@ -328,7 +332,7 @@ export default class Player extends Charactor {
 
     private juageBlankDistance(point: Laya.Vector3) {
         let distance_y = this.player.transform.localPositionY - point.y;
-        return distance_y <= 0.1;
+        return distance_y <= 0.05;
     }
 
     private _addPlankToPlayer() {
@@ -345,6 +349,7 @@ export default class Player extends Charactor {
         cube.transform.rotation = this.blank_point.transform.rotation;
         //cube.active = true;
         this.cube_array.push(cube);
+        AudioManager.instance().playEffect("Collect")
     }
 
     private _popPlankToRoad() {
@@ -367,7 +372,8 @@ export default class Player extends Charactor {
         this._canPop = false;
         Laya.timer.once(200, this, () => {
             this._canPop = true;
-        })
+        });
+        AudioManager.instance().playEffect("Put");
     }
 
 }

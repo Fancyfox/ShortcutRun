@@ -2,6 +2,7 @@ import Camera from "../../Entity/Camera";
 import Obj from "../../Entity/Obj";
 import Player from "../../Entity/Player";
 import Box3 from "../Extensions/Box3";
+import AudioManager from "./AudioManager";
 import CannonManager from "./CannonManager";
 import EffectUtil from "./EffectUtil";
 import ES from "./ES";
@@ -42,7 +43,6 @@ export default class GameManager {
       */
     public setUIScene(scene: Laya.Scene): void {
         this.scene_2d = scene;
-
     }
 
     public loadLevel(level: number) {

@@ -1,11 +1,13 @@
 import { Configuration } from "../../Data/Configuration";
 import { Constants } from "../../Data/Constants";
+import AudioManager from "../Singleton/AudioManager";
 import GameManager from "../Singleton/GameManager";
 
 export default class GamePage extends Laya.Script{
   onAwake(){
     let level=this.loadLevelFromCache();
     GameManager.instance().loadLevel(level);
+    AudioManager.instance().loadFromCache();
   }
 
   private loadLevelFromCache(){
