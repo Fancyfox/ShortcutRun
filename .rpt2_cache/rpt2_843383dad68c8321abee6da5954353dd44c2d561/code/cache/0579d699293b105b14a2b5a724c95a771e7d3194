@@ -1,0 +1,4 @@
+{
+  "code": "export default class Camera extends Laya.Script3D {\r\n    constructor() {\r\n        super();\r\n        Camera.instance = this;\r\n    }\r\n    onAwake() {\r\n        this._camera = this.owner;\r\n    }\r\n}\r\nCamera.instance = null;\r\n",
+  "references": []
+}

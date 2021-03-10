@@ -1,0 +1,7 @@
+{
+  "code": "import GameDefine, { GameState } from \"../Singleton/GameDefine\";\r\nexport default class Home extends Laya.Script {\r\n    constructor() {\r\n        super();\r\n        Home.instance = this;\r\n    }\r\n    onAwake() {\r\n        this._homeUI = this.owner;\r\n        this._uiBox = this._homeUI.getChildAt(0);\r\n        this._startBtn = this._uiBox.getChildByName(\"StartBtn\");\r\n    }\r\n    onEnable() {\r\n        this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this));\r\n    }\r\n    onDisable() {\r\n        this._startBtn.off(Laya.Event.CLICK, null, this.startGame.bind(this));\r\n    }\r\n    close() {\r\n    }\r\n    startGame() {\r\n        if (GameDefine.gameState != GameState.Playing) {\r\n            GameDefine.gameState = GameState.Playing;\r\n            console.log(\"satrt game\");\r\n        }\r\n    }\r\n}\r\nHome.instance = null;\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameData.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts"
+  ]
+}

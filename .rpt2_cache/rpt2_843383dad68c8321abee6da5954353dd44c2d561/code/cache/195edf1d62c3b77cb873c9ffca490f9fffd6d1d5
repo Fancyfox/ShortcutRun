@@ -1,0 +1,6 @@
+{
+  "code": "import Obj from \"./Obj\";\r\nexport default class Player extends Obj {\r\n    constructor() {\r\n        super();\r\n    }\r\n    onAwake() {\r\n        super.onAwake();\r\n    }\r\n    init(data) {\r\n        super.init(data);\r\n    }\r\n    initCamera(camera) {\r\n        this._camera = camera;\r\n        this._player = this.owner;\r\n        this._player.addChild(camera);\r\n        console.log(this.owner, \"this.owner\");\r\n        let point = this._player.getChildByName(\"point\");\r\n        this._camera.transform.position = point.transform.position;\r\n        this._camera.transform.lookAt(this._player.transform.position, Laya.Vector3.up);\r\n    }\r\n}\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Entity/Obj.ts"
+  ]
+}

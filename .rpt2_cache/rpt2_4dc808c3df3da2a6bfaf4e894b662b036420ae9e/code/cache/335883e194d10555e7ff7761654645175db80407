@@ -1,0 +1,8 @@
+{
+  "code": "import EventManager from \"../script/Singleton/EventManager\";\r\nimport GameDefine, { EventName, GameState } from \"../script/Singleton/GameDefine\";\r\nexport class MiniGameManager {\r\n    static instance() {\r\n        if (!this._instance) {\r\n            this._instance = new MiniGameManager();\r\n        }\r\n        return this._instance;\r\n    }\r\n    StartGame() {\r\n        GameDefine.gameState = GameState.Playing;\r\n        EventManager.dispatchEvent(EventName.MINI_GAME_START);\r\n    }\r\n}\r\nMiniGameManager._instance = null;\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/EventManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Constants.ts"
+  ]
+}
