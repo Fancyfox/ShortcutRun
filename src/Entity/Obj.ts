@@ -4,6 +4,7 @@ import Handler = Laya.Handler;
 import Sprite3D = Laya.Sprite3D;
 import Transform3D = Laya.Transform3D;
 import Entity from "./Entity";
+import GameData from "../script/Singleton/GameData";
 
 //import GameManager from "../singleton/GameManager";
 
@@ -30,14 +31,17 @@ export default class Obj extends Entity {
         this.transform.worldMatrix = m;
 
         switch (this.tag) {
+            case "arrival":
+                GameData.arrival_pos = this.transform.position.clone();
+                break;
             default:
-               
+
                 break;
         }
     }
 
     onDestroy() {
         super.onDestroy();
-       // delete GameManager.instance.entitys[this.entityId];
+        // delete GameManager.instance.entitys[this.entityId];
     }
 }

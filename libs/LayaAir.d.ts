@@ -9724,7 +9724,7 @@ declare module laya.d3.core {
 		 * @param up 向上向量。
 		 * @param isLocal 是否局部空间。
 		 */
-		lookAt(target:laya.d3.math.Vector3,up:laya.d3.math.Vector3,isLocal?:boolean):void;
+		lookAt(target:laya.d3.math.Vector3,up:laya.d3.math.Vector3,isLocal?:boolean,iscamera?:boolean):void;
 
 		/**
 		 * 世界缩放。

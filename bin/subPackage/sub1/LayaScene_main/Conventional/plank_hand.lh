@@ -2,16 +2,16 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"MeshSprite3D",
-		"instanceID":55,
+		"instanceID":54,
 		"props":{
 			"name":"plank_hand",
 			"active":true,
 			"isStatic":false,
 			"layer":0,
 			"position":[
-				1.993,
-				-0.576,
-				1.2
+				6.74,
+				0.042,
+				5.02
 			],
 			"rotation":[
 				0,
@@ -32,7 +32,26 @@
 				}
 			]
 		},
-		"components":[],
+		"components":[
+			{
+				"type":"Animator",
+				"layers":[
+					{
+						"name":"Base Layer",
+						"weight":0,
+						"blendingMode":0,
+						"states":[
+							{
+								"name":"blank_push",
+								"clipPath":"Assets/Animation/blank_push-blank_push.lani"
+							}
+						]
+					}
+				],
+				"cullingMode":0,
+				"playOnWake":true
+			}
+		],
 		"child":[]
 	}
 }

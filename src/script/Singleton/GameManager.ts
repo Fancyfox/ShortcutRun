@@ -1,6 +1,8 @@
 import Camera from "../../Entity/Camera";
+import Enemy from "../../Entity/Enemy";
 import Obj from "../../Entity/Obj";
 import Player from "../../Entity/Player";
+import Water from "../../Entity/Water";
 import Box3 from "../Extensions/Box3";
 import AudioManager from "./AudioManager";
 import CannonManager from "./CannonManager";
@@ -68,7 +70,7 @@ export default class GameManager {
                 console.log(Laya.stage, "root");
                 GameData.scene3d = this.scene_3d;
                 GameData.map = this.map;
-                CannonManager.instance.enableCannonWorld();
+                // CannonManager.instance.enableCannonWorld();
             }).then(() => {
                 this.init().then(resolve);
             })
@@ -250,9 +252,17 @@ export default class GameManager {
         let prefab = Laya.loader.getRes(url);
         let clone = Laya.Sprite3D.instantiate(prefab, this.map);
         switch (d.tag) {
+            case "water":
+                ins = clone.addComponent(Water);
+                break;
+
             case "character_base":
+                GameData.player = clone;
                 ins = clone.addComponent(Player);
-                console.log(d, "ddd");
+                ins.initScene3d(this.scene_3d);
+                break;
+            case "enemy":
+                ins = clone.addComponent(Enemy);
                 ins.initScene3d(this.scene_3d);
                 break;
             default:
@@ -273,11 +283,12 @@ export default class GameManager {
         Laya.timer.clearAll(this);
         Laya.timer.clearAll(null);
         EffectUtil.instance.clear();
-        CannonManager.instance.clear();
+        // CannonManager.instance.clear();
         this.data = null;
         GameData.scene3d.removeSelf();
         GameData.scene3d.destroy();
         GameData.scene3d = null;
+        GameData.canRelife = true;
         this.entitys = {};
         ES.instance.offAll();
         Laya.stage.offAll();

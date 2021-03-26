@@ -10,7 +10,7 @@
 			"layer":0,
 			"position":[
 				0,
-				-0.5,
+				-0.7,
 				0
 			],
 			"rotation":[
@@ -20,11 +20,11 @@
 				-1
 			],
 			"scale":[
-				1,
-				1,
-				1
+				50,
+				50,
+				50
 			],
-			"meshPath":"Assets/Mesh/water-water_0.lm",
+			"meshPath":"Library/unity default resources-Plane.lm",
 			"enableRender":true,
 			"materials":[
 				{
@@ -35,7 +35,7 @@
 		"components":[],
 		"child":[
 			{
-				"type":"Sprite3D",
+				"type":"MeshSprite3D",
 				"instanceID":1,
 				"props":{
 					"name":"water",
@@ -44,7 +44,7 @@
 					"layer":0,
 					"position":[
 						0,
-						-0.3,
+						-0.25,
 						0
 					],
 					"rotation":[
@@ -54,9 +54,17 @@
 						-1
 					],
 					"scale":[
-						1,
-						1,
-						1
+						10,
+						0.1,
+						10
+					],
+					"meshPath":"Library/unity default resources-Cube.lm",
+					"enableRender":true,
+					"materials":[
+						{
+							"type":"Laya.BlinnPhongMaterial",
+							"path":"Resources/unity_builtin_extra.lmat"
+						}
 					]
 				},
 				"components":[
@@ -69,14 +77,14 @@
 							{
 								"type":"BoxColliderShape",
 								"center":[
-									0.05975342,
 									0,
-									-7.789764
+									0,
+									0
 								],
 								"size":[
-									1988.454,
-									0.1,
-									1988.454
+									1,
+									1,
+									1
 								]
 							}
 						],

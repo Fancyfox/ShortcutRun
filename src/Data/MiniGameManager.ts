@@ -28,5 +28,13 @@ export class MiniGameManager {
 
     }
 
+    public PauseGame(){
+        GameDefine.gameState=GameState.Pause; 
+    }
+
+    public ResumeGame(){
+        GameDefine.gameState=GameState.Playing;
+    }
+
 
 }

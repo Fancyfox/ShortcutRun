@@ -8,6 +8,7 @@ export default class Pool {
     }
     private plankHand_array: Array<Laya.Sprite3D> = [];
     private plankRoad_array: Array<Laya.Sprite3D> = [];
+    private effect_map = new Map<string, Laya.Sprite3D[]>();
     /**初始化方块的大小 */
     private cube_scale: Laya.Vector3 = new Laya.Vector3(1, 1, 1);
     public getPlank_hand(parent: Laya.Sprite3D, pos: Laya.Vector3): Laya.Sprite3D {
@@ -60,7 +61,6 @@ export default class Pool {
         cube.removeSelf();
         this.plankRoad_array.push(cube);
     }
-
 
 
 

@@ -885,7 +885,7 @@
 	        return dest;
 	    }
 	    static lookAt(eye, target, up, out) {
-			Vector3.subtract(target, eye, Matrix3x3._tempV30);
+			Vector3.subtract( target,eye, Matrix3x3._tempV30);
 			Vector3.scale( Matrix3x3._tempV30,-1, Matrix3x3._tempV30);
 	        Vector3.normalize(Matrix3x3._tempV30, Matrix3x3._tempV30);
 	        Vector3.cross(up, Matrix3x3._tempV30, Matrix3x3._tempV31);
@@ -9281,24 +9281,30 @@
 	        right.y = worldMatElem[1];
 	        right.z = worldMatElem[2];
 	    }
-	    lookAt(target, up, isLocal = false) {
+		lookAt(target, up, isLocal = false, iscamera = true) {
 	        var eye;
-	        if (isLocal) {
-	            eye = this._localPosition;
-	            if (Math.abs(eye.x - target.x) < MathUtils3D.zeroTolerance && Math.abs(eye.y - target.y) < MathUtils3D.zeroTolerance && Math.abs(eye.z - target.z) < MathUtils3D.zeroTolerance)
-	                return;
-	            Quaternion.lookAt(this._localPosition, target, up, this._localRotation);
-	            this._localRotation.invert(this._localRotation);
-	            this.localRotation = this._localRotation;
-	        }
-	        else {
-	            var worldPosition = this.position;
-	            eye = worldPosition;
-	            if (Math.abs(eye.x - target.x) < MathUtils3D.zeroTolerance && Math.abs(eye.y - target.y) < MathUtils3D.zeroTolerance && Math.abs(eye.z - target.z) < MathUtils3D.zeroTolerance)
-	                return;
-	            Quaternion.lookAt(worldPosition, target, up, this._rotation);
-	            this._rotation.invert(this._rotation);
-	            this.rotation = this._rotation;
+			if (isLocal) {
+				eye = this._localPosition;
+				if (Math.abs(eye.x - target.x) < MathUtils3D.zeroTolerance && Math.abs(eye.y - target.y) < MathUtils3D.zeroTolerance && Math.abs(eye.z - target.z) < MathUtils3D.zeroTolerance)
+					return;
+
+				Quaternion.lookAt(this._localPosition, target, up, this._localRotation);
+				this._localRotation.invert(this._localRotation);
+				this.localRotation = this._localRotation;
+			}
+			else {
+				var worldPosition = this.position;
+				eye = worldPosition;
+				if (Math.abs(eye.x - target.x) < MathUtils3D.zeroTolerance && Math.abs(eye.y - target.y) < MathUtils3D.zeroTolerance && Math.abs(eye.z - target.z) < MathUtils3D.zeroTolerance)
+					return;
+				if (iscamera) {
+					Quaternion.lookAt(worldPosition, target, up, this._rotation);
+				} else {
+					Quaternion.lookAt(target, worldPosition, up, this._rotation);
+				}
+
+				this._rotation.invert(this._rotation);
+				this.rotation = this._rotation;
 	        }
 	    }
 	    getWorldLossyScale() {

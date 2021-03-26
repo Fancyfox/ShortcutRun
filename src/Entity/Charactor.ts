@@ -4,7 +4,7 @@ import Obj from "./Obj";
 
 export default class Charactor extends Obj {
     public player: Laya.Sprite3D;
-    public blank_point:Laya.Sprite3D;
+    public blank_point: Laya.Sprite3D;
     public animator: Laya.Animator;
     public playerMove: Laya.Vector3;
     public playerRotate: Laya.Vector3;
@@ -15,6 +15,8 @@ export default class Charactor extends Obj {
     public cube_count: number = 0;
     public cube_array: Array<Laya.Sprite3D> = [];
     public cube_height: number = 0.16;
+    public charactor_tween: Laya.Tween = new Laya.Tween();
+    public moveArrivalpointHandler:Laya.Handler;
 
     //——————————————————射线数据——————————————————————
     /**向下的射线 */

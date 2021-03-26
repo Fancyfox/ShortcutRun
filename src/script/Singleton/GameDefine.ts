@@ -29,7 +29,10 @@ export enum CharacterAnimation {
 }
 export enum EventName {
     MINI_GAME_START = 'mini-game-start',
-    MINI_GAME_END = 'mini-game-end'
+    MINI_GAME_END = 'mini-game-end',
+    MINI_GAME_RELIFE = 'mini-game-relife',
+
+    PLAYER_RELIFE = 'player-relife'
 }
 
 
@@ -46,7 +49,6 @@ export default class GameDefine {
     public static dataPath: string = "data/";
     public static preload = [
         "character_base.lh",
-        "plank.lh",
         "water.lh",
         "plank_hand.lh",
         "plank_road.lh",
@@ -55,6 +57,11 @@ export default class GameDefine {
         "Turn_45_short_L.lh",
         "Turn_45_short_R.lh",
         "cube.lh",
+        "arrival.lh",
+        "fallEffect.lh",
+        "planks.lh",
+        "enemy.lh"
+
     ]
 
     public static sounds = [

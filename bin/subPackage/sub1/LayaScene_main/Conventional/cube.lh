@@ -2,7 +2,7 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"Sprite3D",
-		"instanceID":50,
+		"instanceID":49,
 		"props":{
 			"name":"cube",
 			"active":true,

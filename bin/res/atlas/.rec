@@ -38,15 +38,23 @@ P 0587871F vscroll$up.png
 P 5FD17798 vscroll.png
 P DDDDFB9E vslider$bar.png
 P 01BAE7F5 vslider.png
-D Prefabs
-R 9ACF1D6D Home.prefab
+D loading
+R 943C06A1 progress$bar.png
+R B3079CE4 progress.png
 D textures
 R 29CCBF7C arrow_left_right.png
+P AFF1EE39 ArrowShare.png
+P 3F0F48FE ArrowVideo.png
 P 96BBCA0A audio.png
 P EE4E14AE close.png
 P C392279F currency.png
+P BAF07726 grid_blue.png
+P 615DD3DA grid_green.png
+P 035A7509 grid_grey.png
+P 50BD1797 grid_orange.png
 P 7EF43E9A hand.png
 P 96776528 settings.png
+P CDFC29B0 StartBtn.jpg
 P 3B10729F ToggleOff.png
 P 3A76AD07 ToggleOn.png
 P E9DC29D7 vibration_off.png

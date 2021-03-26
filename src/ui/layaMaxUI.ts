@@ -4,6 +4,14 @@ import Dialog=Laya.Dialog;
 import Scene=Laya.Scene;
 var REG: Function = Laya.ClassUtils.regClass;
 export module ui.Scenes {
+    export class GameUI extends Laya.View {
+        constructor(){ super()}
+        createChildren():void {
+            super.createChildren();
+            this.loadScene("Scenes/Game");
+        }
+    }
+    REG("ui.Scenes.GameUI",GameUI);
     export class StartUI extends Laya.View {
         constructor(){ super()}
         createChildren():void {

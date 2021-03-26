@@ -268,6 +268,28 @@ export class SdkUitl {
         let bgmLoop = loop ? 0 : 1
         Laya.SoundManager.playMusic(url, bgmLoop);
     }
+
+    public static loadSubpackage(name: string, callBack: Function) {
+        if (Laya.Browser.onWeiXin) {
+            if (wx.loadSubpackage) {
+                let task = wx.loadSubpackage({
+                    name: name,
+                    success: function (res) {
+                        callBack && callBack();
+                        // 分包加载成功后通过 success 回调
+                    },
+                    fail: function (res) {
+                        // 分包加载失败通过 fail 回调
+                    }
+                });
+                return task;
+            }
+
+        }
+        callBack && callBack();
+        return null;
+
+    }
 }
 
 

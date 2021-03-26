@@ -1,12 +1,17 @@
+import { Constants } from "../../Data/Constants";
 import { MiniGameManager } from "../../Data/MiniGameManager";
+import GamePage from "../Pages/GamePage";
 import GameData from "../Singleton/GameData";
 import GameDefine, { GameState } from "../Singleton/GameDefine";
+import { PanelBase, UITYpes } from "./PanelBase";
 
-export default class Home extends Laya.Script {
+export default class Home extends PanelBase {
+
     public static instance: Home = null
     private _homeUI: Laya.Image;
     private _uiBox: Laya.Box;
     private _startBtn: Laya.Button;
+    public type: UITYpes = UITYpes.PANEL;
 
 
     constructor() {
@@ -23,6 +28,14 @@ export default class Home extends Laya.Script {
         //this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this))
     }
 
+    show(...args:any[]) {
+        super.show();
+    }
+
+    hide() {
+        super.hide();
+    }
+
     onEnable() {
         this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this))
     }
@@ -31,15 +44,15 @@ export default class Home extends Laya.Script {
         this._startBtn.off(Laya.Event.CLICK, null, this.startGame.bind(this));
     }
 
-    private close() {
-     this._uiBox.removeSelf();
-    }
 
 
     private startGame() {
         if (GameDefine.gameState != GameState.Playing) {
             MiniGameManager.instance().StartGame();
-            this.close();
+            GamePage.instance.hidePage(Constants.UIPage.home, () => {
+                GamePage.instance.showPage(Constants.UIPage.playing)
+            });
+
         }
     }
 }

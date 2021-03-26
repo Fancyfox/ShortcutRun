@@ -1,6 +1,9 @@
+import { Constants } from "../Data/Constants";
 import { MiniGameManager } from "../Data/MiniGameManager";
 import Vector3 from "../script/Extensions/Vector3";
+import GamePage from "../script/Pages/GamePage";
 import AudioManager from "../script/Singleton/AudioManager";
+import EffectUtil from "../script/Singleton/EffectUtil";
 import EventManager from "../script/Singleton/EventManager";
 import GameData from "../script/Singleton/GameData";
 import GameDefine, { CharacterAnimation, CharacterState, EventName, GameState } from "../script/Singleton/GameDefine";
@@ -23,6 +26,10 @@ export default class Player extends Charactor {
     private isMouseDown: boolean = false;
 
     private _canPop: boolean = true;
+    private _isMoveArrival: boolean = false;
+
+    private _relifePart: Laya.Sprite3D;
+
 
 
 
@@ -36,8 +43,6 @@ export default class Player extends Charactor {
         this._point = this.player.getChildByName("point") as Laya.Sprite3D;
         this.blank_point = this.player.getChildByName("plank_point") as Laya.Sprite3D;
         this.animator = this.player.getComponent(Laya.Animator);
-        console.log(this.animator, "animatro");
-
         this.playerMove = new Laya.Vector3(0, 0, this.forward_speed);
         this.curFrameTouchPoint_x = 0;
         this.lastFrameTouchPoint_x = 0;
@@ -46,6 +51,8 @@ export default class Player extends Charactor {
         Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
         Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
         Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
+
+        this.moveArrivalpointHandler = new Laya.Handler(this, this.moveArrivalpointCallback);
     }
 
     onStart() {
@@ -56,11 +63,13 @@ export default class Player extends Charactor {
     onEnable() {
         EventManager.register(EventName.MINI_GAME_START, this.onGameStart, this);
         EventManager.register(EventName.MINI_GAME_END, this.onGameEnd, this);
+        EventManager.register(EventName.PLAYER_RELIFE, this.relifeCallback, this);
     }
 
     onDisable() {
         EventManager.unRegister(EventName.MINI_GAME_START, this.onGameStart, this);
         EventManager.unRegister(EventName.MINI_GAME_END, this.onGameEnd, this);
+        EventManager.unRegister(EventName.PLAYER_RELIFE, this.relifeCallback, this);
     }
 
 
@@ -114,17 +123,17 @@ export default class Player extends Charactor {
 
 
     onUpdate() {
-
-
         if (Laya.timer.delta > 100) {
             return;
         }
 
-
         if (GameDefine.gameState != GameState.Playing) {
             return;
         }
+
+        // return;
         // console.log(this.player.transform.position.y, "positionY");
+
         this.rayCast();
         switch (this.animationState) {
             case CharacterAnimation.Planche:
@@ -140,7 +149,19 @@ export default class Player extends Charactor {
                 this._moveForward();
                 if (this.juageWaterDistance()) {
                     AudioManager.instance().playEffect("FallInWater");
-                    MiniGameManager.instance().EndGame();
+
+                    let pos: Laya.Vector3 = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
+                    EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
+                        res.active = true;
+                    });
+                    if (GameData.canRelife) {
+                        GameData.canRelife = false;
+                        MiniGameManager.instance().PauseGame();
+                        EventManager.dispatchEvent(EventName.MINI_GAME_RELIFE);
+
+                    } else {
+                        MiniGameManager.instance().EndGame();
+                    }
                 }
                 break;
         }
@@ -150,7 +171,6 @@ export default class Player extends Charactor {
     init(data: any) {
         super.init(data);
         Camera.instance.initPlayerData(this.player, this._point);
-        console.log(this.player.transform.position.y, "positionY");
         this.changePlayerState(CharacterAnimation.Idel);
         this.cube_count = 0;
         this._canPop = true;
@@ -229,8 +249,8 @@ export default class Player extends Charactor {
         }
         let pos = this.player.transform.position;
         this.ray_orign.setValue(pos.x, pos.y + 5, pos.z);
-        if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 10)) {
-            console.log("射线检测到了", this.outInfo.collider.owner.name);
+        if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 20)) {
+            //console.log("射线检测到了", this.outInfo.collider.owner.name);
             this.refeshState(this.outInfo, this.animationState);
         }
 
@@ -240,11 +260,29 @@ export default class Player extends Charactor {
         if (!outInfo || !outInfo.succeeded) {
             return;
         }
+
         let colliderName = this.outInfo.collider.owner.name;
+
+        if (GameData.canRelife) {
+            switch (colliderName) {
+                case "Turn_45_L":
+                case "Turn_45_R":
+                case "Turn_45_short_L":
+                case "Turn_45_short_R":
+                    let part = this.outInfo.collider.owner as Laya.Sprite3D;
+                    this.setRelifePart(part);
+                    break;
+            }
+        }
+
+
         let point = outInfo.point;
         switch (state) {
             case CharacterAnimation.Planche:
                 switch (colliderName) {
+                    case "arrival":
+                        this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
+                        break;
                     case "water":
                         if (this.cube_count > 0) {
                             console.log("pop blank");
@@ -273,10 +311,11 @@ export default class Player extends Charactor {
             case CharacterAnimation.Carrying:
             case CharacterAnimation.Running:
                 switch (colliderName) {
+                    case "arrival":
+                        this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
+                        break;
                     case "water":
                         if (this.cube_count > 0) {
-                            console.log("pop blank");
-
                             this._popPlankToRoad();
                             this.changePlayerState(CharacterAnimation.Planche);
                         } else {
@@ -298,13 +337,20 @@ export default class Player extends Charactor {
                 break;
             case CharacterAnimation.Jump:
                 switch (colliderName) {
-
+                    case "arrvial":
+                        if (this.juageRoadDistance()) {
+                            if (this.player.transform.localPositionY < 0) {
+                                this.player.transform.localPositionY = 0;
+                            }
+                            this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
+                        }
+                        break;
+                    case "plank":
                     case "Turn_45_L":
                     case "Turn_45_R":
                     case "Turn_45_short_L":
                     case "Turn_45_short_R":
                         if (this.juageRoadDistance()) {
-                            console.log("judge");
                             this.changePlayerState(CharacterAnimation.Running);
                             if (this.player.transform.localPositionY < 0) {
                                 this.player.transform.localPositionY = 0;
@@ -346,8 +392,11 @@ export default class Player extends Charactor {
             pos = this.blank_point.transform.position.clone();
         }
         let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+        let animator = cube.getComponent(Laya.Animator) as Laya.Animator;
+        animator.play("blank_push");
+        let target_y = cube.transform.localPositionY + 0.2;
+        Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
         cube.transform.rotation = this.blank_point.transform.rotation;
-        //cube.active = true;
         this.cube_array.push(cube);
         AudioManager.instance().playEffect("Collect")
     }
@@ -374,6 +423,66 @@ export default class Player extends Charactor {
             this._canPop = true;
         });
         AudioManager.instance().playEffect("Put");
+    }
+
+    private _clearPlank() {
+        Laya.timer.frameLoop(1, this.player, () => {
+            if (this.cube_array.length <= 0) {
+                Laya.timer.clearAll(this.player);
+                return;
+            }
+            let cube = this.cube_array.pop();
+            this.cube_count--;
+            Pool.instance.reversePlankHandCube(cube);
+        })
+    }
+
+    private _moveArrivalPoint(arrival: Laya.Sprite3D) {
+        if (this._isMoveArrival) {
+            return;
+        }
+        if (!arrival) {
+            return;
+        }
+        this._clearPlank();
+        this.changePlayerState(CharacterAnimation.Running)
+        let pos = arrival.transform.position;
+        this._isMoveArrival = true;
+        this._clearMoveTween();
+        this.charactor_tween.to(this.player.transform, { localPositionX: pos.x, localPositionZ: pos.z }, 1, null, this.moveArrivalpointHandler)
+
+    }
+
+    private _clearMoveTween() {
+        this.charactor_tween.clear();
+    }
+
+    private moveArrivalpointCallback() {
+        MiniGameManager.instance().EndGame();
+        //如果第一名播放胜利动画 否则播放失败动画
+        this.changePlayerState(CharacterAnimation.Dance);
+    }
+
+    private setRelifePart(part: Laya.Sprite3D) {
+        if (!this._relifePart) {
+            this._relifePart = part;
+            return;
+        }
+
+        if (this._relifePart != part) {
+            this._relifePart = part;
+        }
+    }
+
+    relifeCallback() {
+        if (this._relifePart) {
+            let relifePos = this._relifePart.transform.position.clone();
+            this.player.transform.position = new Laya.Vector3(relifePos.x, 0, relifePos.z);
+            //GameState.
+            MiniGameManager.instance().ResumeGame();
+        } else {
+
+        }
     }
 
 }

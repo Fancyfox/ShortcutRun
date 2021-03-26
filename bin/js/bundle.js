@@ -5,29 +5,9 @@
     }
     Constants.version = "1.0.0";
     Constants.UIPage = {
-        mainUI: 'mainUI',
-        hireUI: 'hireUI',
-        broadcasterUI: 'broadcasterUI',
-        goldenUI: 'goldenUI',
-        goldenRankUI: 'goldenRankUI',
-        missionUI: 'missionUI',
-        giftUI: 'giftUI',
-        giftDetailUI: 'giftDetailUI',
-        selectFloorUI: 'selectFloorUI',
-        messageUI: 'messageUI',
-        popupUI: 'popupUI',
-        superManagerUI: 'superManagerUI',
-        rocketUI: 'rocketUI',
-        gashaponMachineUI: 'gashaponMachineUI',
-        shopUI: 'shopUI',
-        bookUI: 'bookUI',
-        bookDetailUI: 'bookDetailUI',
-        settingUI: 'settingUI',
-        goldenKeyUI: 'goldenKeyUI',
-        offlineBenefitsUI: 'offlineBenefitsUI',
-        coinflyUI: 'coinFlyUI',
-        tutorialUI: 'tutorialUI',
-        tutorialMissionUI: 'tutorialMissionUI'
+        home: "Home",
+        playing: "Playing",
+        relife: "Relife"
     };
     Constants.GameConfigID = 'SHORTCOU_RUN';
     Constants.LevelTick = 'level_tick';
@@ -287,6 +267,23 @@
             let bgmLoop = loop ? 0 : 1;
             Laya.SoundManager.playMusic(url, bgmLoop);
         }
+        static loadSubpackage(name, callBack) {
+            if (Laya.Browser.onWeiXin) {
+                if (wx.loadSubpackage) {
+                    let task = wx.loadSubpackage({
+                        name: name,
+                        success: function (res) {
+                            callBack && callBack();
+                        },
+                        fail: function (res) {
+                        }
+                    });
+                    return task;
+                }
+            }
+            callBack && callBack();
+            return null;
+        }
     }
     SdkUitl.images = [
         {
@@ -416,6 +413,8 @@
     (function (EventName) {
         EventName["MINI_GAME_START"] = "mini-game-start";
         EventName["MINI_GAME_END"] = "mini-game-end";
+        EventName["MINI_GAME_RELIFE"] = "mini-game-relife";
+        EventName["PLAYER_RELIFE"] = "player-relife";
     })(EventName || (EventName = {}));
     class GameDefine {
     }
@@ -429,7 +428,6 @@
     GameDefine.dataPath = "data/";
     GameDefine.preload = [
         "character_base.lh",
-        "plank.lh",
         "water.lh",
         "plank_hand.lh",
         "plank_road.lh",
@@ -438,6 +436,10 @@
         "Turn_45_short_L.lh",
         "Turn_45_short_R.lh",
         "cube.lh",
+        "arrival.lh",
+        "fallEffect.lh",
+        "planks.lh",
+        "enemy.lh"
     ];
     GameDefine.sounds = [];
     GameDefine.bgms = [
@@ -480,6 +482,182 @@
         }
     }
     Camera.instance = null;
+
+    class GameData {
+        static resetData() {
+        }
+    }
+    GameData.level = 1;
+    GameData.maxLevel = 20;
+    GameData.coin = 0;
+    GameData.isMoveEnd = false;
+    GameData.playerSkin_index = 0;
+    GameData.playerSkin_maxindex = 5;
+    GameData.playerSkinTex_array = [];
+    GameData.princessSkin_index = 0;
+    GameData.princessSkin_maxindex = 5;
+    GameData.princessSkinTex_array = [];
+    GameData.isShake = true;
+    GameData.isShowHome = false;
+    GameData.canRelife = true;
+
+    class EffectUtil {
+        constructor() {
+            this.effects = {};
+        }
+        static get instance() {
+            if (!this._instance)
+                this._instance = new EffectUtil();
+            return this._instance;
+        }
+        loadEffect(tag, recycleDelay = 1000, pos, parent) {
+            return new Promise(resolve => {
+                if (!this.effects[tag])
+                    this.effects[tag] = [];
+                let arr = this.effects[tag];
+                if (arr.length > 0) {
+                    let p = arr.pop();
+                    (parent || GameData.scene3d).addChild(p);
+                    p.transform.position = pos;
+                    if (recycleDelay != -1)
+                        Laya.timer.once(recycleDelay, this, a => this.recycleEffect(a), [p]);
+                    resolve(p);
+                }
+                else {
+                    Laya.Sprite3D.load(GameDefine.prefabRoot + tag + '.lh', Laya.Handler.create(null, (res) => {
+                        let ins = Laya.Sprite3D.instantiate(res);
+                        (parent || GameData.scene3d).addChild(ins);
+                        ins.transform.position = pos;
+                        if (recycleDelay != -1)
+                            Laya.timer.once(recycleDelay, this, a => this.recycleEffect(a), [ins]);
+                        resolve(ins);
+                    }));
+                }
+            });
+        }
+        recycleEffect(p) {
+            p.removeSelf();
+            if (!this.effects[p.name])
+                return;
+            this.effects[p.name].push(p);
+        }
+        clear() {
+            for (const k in this.effects) {
+                if (this.effects.hasOwnProperty(k)) {
+                    const arr = this.effects[k];
+                    arr.map(p => p.destroy());
+                }
+            }
+            this.effects = {};
+        }
+    }
+
+    class EventManager {
+        static register(eventName, cb, target) {
+            if (!this.handle[eventName]) {
+                this.handle[eventName] = [];
+            }
+            const data = { func: cb, target };
+            this.handle[eventName].push(data);
+        }
+        static unRegister(eventName, cb, target) {
+            const list = this.handle[eventName];
+            if (!list || list.length <= 0) {
+                return;
+            }
+            for (let i = 0; i < list.length; i++) {
+                const event = list[i];
+                if (event.func === cb && (!target || target === event.target)) {
+                    list.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        static dispatchEvent(eventName, ...args) {
+            const list = this.handle[eventName];
+            if (!list || list.length <= 0) {
+                return;
+            }
+            for (let i = 0; i < list.length; i++) {
+                const event = list[i];
+                event.func.apply(event.target, args);
+            }
+        }
+    }
+    EventManager.handle = {};
+
+    class Pool {
+        constructor() {
+            this.plankHand_array = [];
+            this.plankRoad_array = [];
+            this.effect_map = new Map();
+            this.cube_scale = new Laya.Vector3(1, 1, 1);
+        }
+        static get instance() {
+            if (!this._instance)
+                this._instance = new Pool();
+            return this._instance;
+        }
+        getPlank_hand(parent, pos) {
+            let cube;
+            if (this.plankHand_array.length <= 0) {
+                let prefab = Laya.loader.getRes(GameDefine.prefabRoot + "plank_hand.lh");
+                cube = Laya.Sprite3D.instantiate(prefab, parent, true);
+            }
+            else {
+                cube = this.plankHand_array.pop();
+                parent.addChild(cube);
+            }
+            cube.transform.position = pos;
+            cube.active = true;
+            return cube;
+        }
+        getPlank_road(parent, pos) {
+            let cube;
+            if (this.plankRoad_array.length <= 0) {
+                let prefab = Laya.loader.getRes(GameDefine.prefabRoot + "plank_road.lh");
+                cube = Laya.Sprite3D.instantiate(prefab, parent, true);
+            }
+            else {
+                cube = this.plankRoad_array.pop();
+                parent.addChild(cube);
+            }
+            cube.transform.position = pos;
+            cube.active = true;
+            return cube;
+        }
+        reversePlankHandCube(cube) {
+            cube.active = false;
+            cube.removeSelf();
+            this.plankHand_array.push(cube);
+        }
+        reversePlankRoadCube(cube) {
+            cube.active = false;
+            cube.removeSelf();
+            this.plankRoad_array.push(cube);
+        }
+        clearPool() {
+            let len1 = this.plankRoad_array.length;
+            for (let i = 0; i < len1; i++) {
+                let cube = this.plankRoad_array.pop();
+                if (cube) {
+                    cube.removeSelf();
+                    cube.destroy();
+                }
+            }
+            let len2 = this.plankHand_array.length;
+            for (let i = 0; i < len2; i++) {
+                let cube = this.plankHand_array.pop();
+                if (cube) {
+                    cube.removeSelf();
+                    cube.destroy();
+                }
+            }
+            this.plankHand_array.length = 0;
+            this.plankRoad_array.length = 0;
+            ;
+        }
+    }
 
     class ES extends Laya.EventDispatcher {
         static get instance() {
@@ -585,153 +763,15 @@
             let m = new Laya.Matrix4x4().fromArray(data.transform);
             this.transform.worldMatrix = m;
             switch (this.tag) {
+                case "arrival":
+                    GameData.arrival_pos = this.transform.position.clone();
+                    break;
                 default:
                     break;
             }
         }
         onDestroy() {
             super.onDestroy();
-        }
-    }
-
-    class EventManager {
-        static register(eventName, cb, target) {
-            if (!this.handle[eventName]) {
-                this.handle[eventName] = [];
-            }
-            const data = { func: cb, target };
-            this.handle[eventName].push(data);
-        }
-        static unRegister(eventName, cb, target) {
-            const list = this.handle[eventName];
-            if (!list || list.length <= 0) {
-                return;
-            }
-            for (let i = 0; i < list.length; i++) {
-                const event = list[i];
-                if (event.func === cb && (!target || target === event.target)) {
-                    list.splice(i, 1);
-                    break;
-                }
-            }
-        }
-        static dispatchEvent(eventName, ...args) {
-            const list = this.handle[eventName];
-            if (!list || list.length <= 0) {
-                return;
-            }
-            for (let i = 0; i < list.length; i++) {
-                const event = list[i];
-                event.func.apply(event.target, args);
-            }
-        }
-    }
-    EventManager.handle = {};
-
-    class MiniGameManager {
-        static instance() {
-            if (!this._instance) {
-                this._instance = new MiniGameManager();
-            }
-            return this._instance;
-        }
-        StartGame() {
-            GameDefine.gameState = GameState.Playing;
-            EventManager.dispatchEvent(EventName.MINI_GAME_START);
-        }
-        EndGame() {
-            GameDefine.gameState = GameState.End;
-            EventManager.dispatchEvent(EventName.MINI_GAME_END);
-        }
-    }
-    MiniGameManager._instance = null;
-
-    class GameData {
-        static resetData() {
-        }
-    }
-    GameData.level = 1;
-    GameData.maxLevel = 20;
-    GameData.coin = 0;
-    GameData.isMoveEnd = false;
-    GameData.playerSkin_index = 0;
-    GameData.playerSkin_maxindex = 5;
-    GameData.playerSkinTex_array = [];
-    GameData.princessSkin_index = 0;
-    GameData.princessSkin_maxindex = 5;
-    GameData.princessSkinTex_array = [];
-    GameData.isShake = true;
-    GameData.isShowHome = false;
-
-    class Pool {
-        constructor() {
-            this.plankHand_array = [];
-            this.plankRoad_array = [];
-            this.cube_scale = new Laya.Vector3(1, 1, 1);
-        }
-        static get instance() {
-            if (!this._instance)
-                this._instance = new Pool();
-            return this._instance;
-        }
-        getPlank_hand(parent, pos) {
-            let cube;
-            if (this.plankHand_array.length <= 0) {
-                let prefab = Laya.loader.getRes(GameDefine.prefabRoot + "plank_hand.lh");
-                cube = Laya.Sprite3D.instantiate(prefab, parent, true);
-            }
-            else {
-                cube = this.plankHand_array.pop();
-                parent.addChild(cube);
-            }
-            cube.transform.position = pos;
-            cube.active = true;
-            return cube;
-        }
-        getPlank_road(parent, pos) {
-            let cube;
-            if (this.plankRoad_array.length <= 0) {
-                let prefab = Laya.loader.getRes(GameDefine.prefabRoot + "plank_road.lh");
-                cube = Laya.Sprite3D.instantiate(prefab, parent, true);
-            }
-            else {
-                cube = this.plankRoad_array.pop();
-                parent.addChild(cube);
-            }
-            cube.transform.position = pos;
-            cube.active = true;
-            return cube;
-        }
-        reversePlankHandCube(cube) {
-            cube.active = false;
-            cube.removeSelf();
-            this.plankHand_array.push(cube);
-        }
-        reversePlankRoadCube(cube) {
-            cube.active = false;
-            cube.removeSelf();
-            this.plankRoad_array.push(cube);
-        }
-        clearPool() {
-            let len1 = this.plankRoad_array.length;
-            for (let i = 0; i < len1; i++) {
-                let cube = this.plankRoad_array.pop();
-                if (cube) {
-                    cube.removeSelf();
-                    cube.destroy();
-                }
-            }
-            let len2 = this.plankHand_array.length;
-            for (let i = 0; i < len2; i++) {
-                let cube = this.plankHand_array.pop();
-                if (cube) {
-                    cube.removeSelf();
-                    cube.destroy();
-                }
-            }
-            this.plankHand_array.length = 0;
-            this.plankRoad_array.length = 0;
-            ;
         }
     }
 
@@ -743,6 +783,7 @@
             this.cube_count = 0;
             this.cube_array = [];
             this.cube_height = 0.16;
+            this.charactor_tween = new Laya.Tween();
             this.isRayCast = false;
         }
         onAwake() {
@@ -759,28 +800,29 @@
         }
     }
 
-    class Player extends Charactor {
+    class Enemy extends Charactor {
         constructor() {
             super();
-            this._rotate_speed = 0.35;
-            this.fingerMoveDistance_x = 0;
-            this.isMouseDown = false;
             this._canPop = true;
+            this._rotate_speed = 4;
+            this._isMoveArrival = false;
+            this._die = false;
+            this._toArrival = false;
+            this._final = false;
+            this._toRight = false;
+            this.qua = new Laya.Quaternion();
         }
         onAwake() {
             super.onAwake();
             this.player = this.owner;
-            this._point = this.player.getChildByName("point");
-            this.blank_point = this.player.getChildByName("plank_point");
             this.animator = this.player.getComponent(Laya.Animator);
-            console.log(this.animator, "animatro");
+            this.blank_point = this.player.getChildByName("plank_point");
+            this._left = this.player.getChildByName("left");
+            this._right = this.player.getChildByName("right");
             this.playerMove = new Laya.Vector3(0, 0, this.forward_speed);
-            this.curFrameTouchPoint_x = 0;
-            this.lastFrameTouchPoint_x = 0;
             this.playerRotate = new Laya.Vector3(0, this._rotate_speed, 0);
-            Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
-            Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
-            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
+            this._point = this.player.getChildByName("point");
+            this.moveArrivalpointHandler = new Laya.Handler(this, this.moveArrivalpointCallback);
         }
         onStart() {
             super.onStart();
@@ -793,6 +835,465 @@
         onDisable() {
             EventManager.unRegister(EventName.MINI_GAME_START, this.onGameStart, this);
             EventManager.unRegister(EventName.MINI_GAME_END, this.onGameEnd, this);
+        }
+        init(data) {
+            super.init(data);
+            this.changePlayerState(CharacterAnimation.Idel);
+            this.cube_count = 0;
+            this._canPop = true;
+            this._die = false;
+            this._toArrival = false;
+            this._final = false;
+        }
+        onUpdate() {
+            if (Laya.timer.delta > 100) {
+                return;
+            }
+            if (GameDefine.gameState == GameState.None || GameDefine.gameState == GameState.Ready) {
+                return;
+            }
+            if (this._die) {
+                return;
+            }
+            if (this._final) {
+                return;
+            }
+            this.rayCast();
+            switch (this.animationState) {
+                case CharacterAnimation.Planche:
+                case CharacterAnimation.Carrying:
+                case CharacterAnimation.Running:
+                    this._moveForward();
+                    if (this.player.transform.localPositionY < 0) {
+                        this.player.transform.localPositionY = 0;
+                    }
+                    break;
+                case CharacterAnimation.Jump:
+                    this.playerMove.y -= this._decreaseDownspeed();
+                    this._moveForward();
+                    if (this.juageWaterDistance()) {
+                        this.enemyDie();
+                        let pos = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
+                        EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
+                            res.active = true;
+                        });
+                    }
+                    break;
+            }
+        }
+        enemyDie() {
+            if (!this._die) {
+                this._die = true;
+            }
+        }
+        onGameStart() {
+            this.changePlayerState(CharacterAnimation.Running);
+            this.startRay();
+        }
+        onGameEnd() {
+            this.changePlayerState(CharacterAnimation.Falling);
+        }
+        startRay() {
+            this.isRayCast = true;
+        }
+        initRay() {
+            this.ray_orign = this.player.transform.position.clone();
+            this.ray_down = new Laya.Ray(this.ray_orign, Laya.Vector3.down);
+            this.outInfo = new Laya.HitResult();
+            this.ray_left_orign = this._left.transform.position.clone();
+            this.ray_left_down = new Laya.Ray(this.ray_left_orign, Laya.Vector3.down);
+            this.outInfo_left = new Laya.HitResult();
+            this.ray_right_orign = this._right.transform.position.clone();
+            this.ray_right_down = new Laya.Ray(this.ray_right_orign, Laya.Vector3.down);
+            this.outInfo_right = new Laya.HitResult();
+        }
+        rayCast() {
+            if (!this.physicsSimulation) {
+                return;
+            }
+            if (!this.isRayCast) {
+                return;
+            }
+            let pos = this.player.transform.position;
+            this.ray_orign.setValue(pos.x, pos.y + 5, pos.z);
+            if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 20)) {
+                this.refreshState(this.outInfo, this.animationState);
+            }
+            if (this._toArrival) {
+                this.player.transform.lookAt(GameData.arrival_pos, Laya.Vector3.up, false, false);
+                return;
+            }
+            if (this._toRight) {
+                this._toRight = false;
+                this._rotateToRight();
+            }
+            if (this.rayLeftCast() && this.rayRigtCast()) {
+                console.log("move up");
+                return;
+            }
+            if (this.rayLeftCast()) {
+                this._rotate(-1);
+                console.log("ray left");
+                return;
+            }
+            if (this.rayRigtCast()) {
+                this._rotate(1);
+                console.log("ray right");
+                return;
+            }
+        }
+        refreshState(outInfo, state) {
+            if (!outInfo || !outInfo.succeeded) {
+                return;
+            }
+            let colliderName = this.outInfo.collider.owner.name;
+            let point = outInfo.point;
+            switch (state) {
+                case CharacterAnimation.Planche:
+                    switch (colliderName) {
+                        case "arrival":
+                            this._moveArrivalPoint(this.outInfo.collider.owner);
+                            break;
+                        case "water":
+                            if (this.cube_count > 0) {
+                                this._popPlankToRoad();
+                                this.changePlayerState(CharacterAnimation.Planche);
+                            }
+                            else {
+                                this.changePlayerState(CharacterAnimation.Jump);
+                            }
+                            break;
+                        case "Turn_45_L":
+                        case "Turn_45_R":
+                        case "Turn_45_short_L":
+                        case "Turn_45_short_R":
+                        case "plank":
+                            if (this._toArrival) {
+                                this._toArrival = false;
+                            }
+                            if (!this._toRight) {
+                                this._toRight = true;
+                                this._part = this.outInfo.collider.owner;
+                            }
+                            if (this.cube_count > 0) {
+                                this.changePlayerState(CharacterAnimation.Carrying);
+                            }
+                            else {
+                                this.changePlayerState(CharacterAnimation.Running);
+                            }
+                            break;
+                    }
+                    break;
+                case CharacterAnimation.Carrying:
+                case CharacterAnimation.Running:
+                    switch (colliderName) {
+                        case "arrival":
+                            this._moveArrivalPoint(this.outInfo.collider.owner);
+                            break;
+                        case "water":
+                            if (this.cube_count > 0) {
+                                this._popPlankToRoad();
+                                this.changePlayerState(CharacterAnimation.Planche);
+                            }
+                            else {
+                                this.changePlayerState(CharacterAnimation.Jump);
+                            }
+                            break;
+                        case "plank":
+                            this._addPlankToEnemy();
+                            this.changePlayerState(CharacterAnimation.Carrying);
+                            let plank = outInfo.collider.owner;
+                            plank.removeSelf();
+                            plank.destroy();
+                            break;
+                    }
+                    break;
+                case CharacterAnimation.Jump:
+                    switch (colliderName) {
+                        case "arrvial":
+                            if (this.juageRoadDistance()) {
+                                if (this.player.transform.localPositionY < 0) {
+                                    this.player.transform.localPositionY = 0;
+                                }
+                                this._moveArrivalPoint(this.outInfo.collider.owner);
+                            }
+                            break;
+                        case "plank":
+                        case "Turn_45_L":
+                        case "Turn_45_R":
+                        case "Turn_45_short_L":
+                        case "Turn_45_short_R":
+                            if (this.juageRoadDistance()) {
+                                this.changePlayerState(CharacterAnimation.Running);
+                                if (this.player.transform.localPositionY < 0) {
+                                    this.player.transform.localPositionY = 0;
+                                }
+                            }
+                            break;
+                        case "plank_road":
+                            if (this.juageBlankDistance(point)) {
+                                console.log("judge blank road");
+                                this.changePlayerState(CharacterAnimation.Running);
+                            }
+                            break;
+                    }
+                    break;
+            }
+        }
+        juageRoadDistance() {
+            return this.player.transform.localPositionY <= 0;
+        }
+        juageBlankDistance(point) {
+            let distance_y = this.player.transform.localPositionY - point.y;
+            return distance_y <= 0.05;
+        }
+        juageWaterDistance() {
+            return this.player.transform.localPositionY <= -2.3;
+        }
+        juageToArrival() {
+            if (this._toArrival) {
+                return;
+            }
+            if (this.cube_count > RandomUtil.RandomInteger(14, 18)) {
+                this._toArrival = true;
+                Laya.timer.once(1000, this, () => {
+                    this._toArrival = false;
+                });
+            }
+        }
+        rayLeftCast() {
+            if (!this.physicsSimulation || !this.isRayCast) {
+                return false;
+            }
+            let pos = this._left.transform.position;
+            this.ray_left_orign.setValue(pos.x, pos.y, pos.z);
+            if (this.physicsSimulation.rayCast(this.ray_left_down, this.outInfo_left, 20)) {
+                let colliderName = this.outInfo_left.collider.owner.name;
+                switch (colliderName) {
+                    case "water":
+                        return false;
+                    case "Turn_45_L":
+                    case "Turn_45_R":
+                    case "Turn_45_short_L":
+                    case "Turn_45_short_R":
+                    case "plank":
+                    case "arrival":
+                        return true;
+                }
+            }
+            return false;
+        }
+        rayRigtCast() {
+            if (!this.physicsSimulation || !this.isRayCast) {
+                return false;
+            }
+            let pos = this._right.transform.position;
+            this.ray_right_orign.setValue(pos.x, pos.y, pos.z);
+            if (this.physicsSimulation.rayCast(this.ray_right_down, this.outInfo_right, 20)) {
+                let colliderName = this.outInfo_right.collider.owner.name;
+                switch (colliderName) {
+                    case "water":
+                        return false;
+                    case "Turn_45_L":
+                    case "Turn_45_R":
+                    case "Turn_45_short_L":
+                    case "Turn_45_short_R":
+                    case "plank":
+                    case "arrival":
+                        return true;
+                }
+            }
+            return false;
+        }
+        _rotateToRight() {
+            if (!this._part) {
+                return;
+            }
+            let part_up = new Laya.Vector3();
+            let enemy_forward = new Laya.Vector3();
+            this._part.transform.getUp(part_up);
+            part_up = part_up;
+            Laya.Vector3.scale(part_up, -1, part_up);
+            part_up = part_up;
+            this.player.transform.getForward(enemy_forward);
+            enemy_forward = enemy_forward;
+            let angle = Laya.Vector3.signedAngle(enemy_forward, part_up, Laya.Vector3.up);
+            let rad = angle * Math.PI / 180;
+            Laya.Quaternion.createFromAxisAngle(Laya.Vector3.up, rad, this.qua);
+            this.qua = this.qua;
+            this.player.transform.rotation = this.qua;
+        }
+        _moveForward() {
+            this.player.transform.translate(this.playerMove, true);
+        }
+        _decreaseDownspeed() {
+            return Laya.timer.delta / 1000 * 0.8;
+        }
+        _rotate(dir) {
+            this.playerRotate.setValue(0, -this._rotate_speed * dir * Laya.timer.delta / 1000, 0);
+            this.player.transform.rotate(this.playerRotate, true);
+        }
+        changePlayerState(state) {
+            if (this.animationState == state) {
+                return;
+            }
+            this._playAnimation(state);
+            switch (state) {
+                case CharacterAnimation.Planche:
+                case CharacterAnimation.Carrying:
+                case CharacterAnimation.Running:
+                    this.playerMove.setValue(0, 0, this.forward_speed);
+                    break;
+                case CharacterAnimation.Jump:
+                    this.playerMove.setValue(0, this.down_speed, this.forward_speed);
+                    break;
+                case CharacterAnimation.Idel:
+                    this.playerMove.setValue(0, 0, 0);
+                    break;
+                default:
+                    break;
+            }
+        }
+        _playAnimation(state) {
+            this.animationState = state;
+            this.animator.play(state);
+        }
+        _addPlankToEnemy() {
+            this.cube_count++;
+            let pos = new Laya.Vector3();
+            if (this.cube_array.length > 0) {
+                let lastcube = this.cube_array[this.cube_array.length - 1];
+                pos.setValue(lastcube.transform.position.x, lastcube.transform.position.y + this.cube_height, lastcube.transform.position.z);
+            }
+            else {
+                pos = this.blank_point.transform.position.clone();
+            }
+            let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+            let animator = cube.getComponent(Laya.Animator);
+            animator.play("blank_push");
+            let target_y = cube.transform.localPositionY + 0.2;
+            Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
+            cube.transform.rotation = this.blank_point.transform.rotation;
+            this.cube_array.push(cube);
+            this.juageToArrival();
+        }
+        _popPlankToRoad() {
+            if (!this._canPop) {
+                return;
+            }
+            if (this.cube_array.length <= 0) {
+                return;
+            }
+            let cube = this.cube_array.pop();
+            this.cube_count--;
+            Pool.instance.reversePlankHandCube(cube);
+            let plankRoad = Pool.instance.getPlank_road(GameData.map, this.player.transform.position.clone());
+            plankRoad.transform.rotation = this.player.transform.rotation.clone();
+            plankRoad.transform.setWorldLossyScale(Laya.Vector3.one);
+            this._canPop = false;
+            Laya.timer.once(200, this, () => {
+                this._canPop = true;
+            });
+        }
+        _clearPlank() {
+            Laya.timer.frameLoop(1, this.player, () => {
+                if (this.cube_array.length <= 0) {
+                    Laya.timer.clearAll(this.player);
+                    return;
+                }
+                let cube = this.cube_array.pop();
+                this.cube_count--;
+                Pool.instance.reversePlankHandCube(cube);
+            });
+        }
+        _moveArrivalPoint(arrival) {
+            console.log("_moveArrivalPoint");
+            if (this._isMoveArrival) {
+                return;
+            }
+            if (!arrival) {
+                return;
+            }
+            this._clearPlank();
+            this.changePlayerState(CharacterAnimation.Running);
+            let pos = arrival.transform.position;
+            this._isMoveArrival = true;
+            this._clearMoveTween();
+            this.charactor_tween.to(this.player.transform, { localPositionX: pos.x, localPositionZ: pos.z }, 1, null, this.moveArrivalpointHandler);
+        }
+        _clearMoveTween() {
+            this.charactor_tween.clear();
+        }
+        moveArrivalpointCallback() {
+            if (this._final) {
+                return;
+            }
+            this._final = true;
+            this.changePlayerState(CharacterAnimation.Dance);
+        }
+    }
+
+    class MiniGameManager {
+        static instance() {
+            if (!this._instance) {
+                this._instance = new MiniGameManager();
+            }
+            return this._instance;
+        }
+        StartGame() {
+            GameDefine.gameState = GameState.Playing;
+            EventManager.dispatchEvent(EventName.MINI_GAME_START);
+        }
+        EndGame() {
+            GameDefine.gameState = GameState.End;
+            EventManager.dispatchEvent(EventName.MINI_GAME_END);
+        }
+        PauseGame() {
+            GameDefine.gameState = GameState.Pause;
+        }
+        ResumeGame() {
+            GameDefine.gameState = GameState.Playing;
+        }
+    }
+    MiniGameManager._instance = null;
+
+    class Player extends Charactor {
+        constructor() {
+            super();
+            this._rotate_speed = 0.35;
+            this.fingerMoveDistance_x = 0;
+            this.isMouseDown = false;
+            this._canPop = true;
+            this._isMoveArrival = false;
+        }
+        onAwake() {
+            super.onAwake();
+            this.player = this.owner;
+            this._point = this.player.getChildByName("point");
+            this.blank_point = this.player.getChildByName("plank_point");
+            this.animator = this.player.getComponent(Laya.Animator);
+            this.playerMove = new Laya.Vector3(0, 0, this.forward_speed);
+            this.curFrameTouchPoint_x = 0;
+            this.lastFrameTouchPoint_x = 0;
+            this.playerRotate = new Laya.Vector3(0, this._rotate_speed, 0);
+            Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
+            Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
+            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
+            this.moveArrivalpointHandler = new Laya.Handler(this, this.moveArrivalpointCallback);
+        }
+        onStart() {
+            super.onStart();
+            this.initRay();
+        }
+        onEnable() {
+            EventManager.register(EventName.MINI_GAME_START, this.onGameStart, this);
+            EventManager.register(EventName.MINI_GAME_END, this.onGameEnd, this);
+            EventManager.register(EventName.PLAYER_RELIFE, this.relifeCallback, this);
+        }
+        onDisable() {
+            EventManager.unRegister(EventName.MINI_GAME_START, this.onGameStart, this);
+            EventManager.unRegister(EventName.MINI_GAME_END, this.onGameEnd, this);
+            EventManager.unRegister(EventName.PLAYER_RELIFE, this.relifeCallback, this);
         }
         mouseDown() {
             if (GameDefine.gameState != GameState.Playing) {
@@ -854,7 +1355,18 @@
                     this._moveForward();
                     if (this.juageWaterDistance()) {
                         AudioManager.instance().playEffect("FallInWater");
-                        MiniGameManager.instance().EndGame();
+                        let pos = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
+                        EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
+                            res.active = true;
+                        });
+                        if (GameData.canRelife) {
+                            GameData.canRelife = false;
+                            MiniGameManager.instance().PauseGame();
+                            EventManager.dispatchEvent(EventName.MINI_GAME_RELIFE);
+                        }
+                        else {
+                            MiniGameManager.instance().EndGame();
+                        }
                     }
                     break;
             }
@@ -862,7 +1374,6 @@
         init(data) {
             super.init(data);
             Camera.instance.initPlayerData(this.player, this._point);
-            console.log(this.player.transform.position.y, "positionY");
             this.changePlayerState(CharacterAnimation.Idel);
             this.cube_count = 0;
             this._canPop = true;
@@ -930,8 +1441,7 @@
             }
             let pos = this.player.transform.position;
             this.ray_orign.setValue(pos.x, pos.y + 5, pos.z);
-            if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 10)) {
-                console.log("射线检测到了", this.outInfo.collider.owner.name);
+            if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 20)) {
                 this.refeshState(this.outInfo, this.animationState);
             }
         }
@@ -940,10 +1450,24 @@
                 return;
             }
             let colliderName = this.outInfo.collider.owner.name;
+            if (GameData.canRelife) {
+                switch (colliderName) {
+                    case "Turn_45_L":
+                    case "Turn_45_R":
+                    case "Turn_45_short_L":
+                    case "Turn_45_short_R":
+                        let part = this.outInfo.collider.owner;
+                        this.setRelifePart(part);
+                        break;
+                }
+            }
             let point = outInfo.point;
             switch (state) {
                 case CharacterAnimation.Planche:
                     switch (colliderName) {
+                        case "arrival":
+                            this._moveArrivalPoint(this.outInfo.collider.owner);
+                            break;
                         case "water":
                             if (this.cube_count > 0) {
                                 console.log("pop blank");
@@ -972,9 +1496,11 @@
                 case CharacterAnimation.Carrying:
                 case CharacterAnimation.Running:
                     switch (colliderName) {
+                        case "arrival":
+                            this._moveArrivalPoint(this.outInfo.collider.owner);
+                            break;
                         case "water":
                             if (this.cube_count > 0) {
-                                console.log("pop blank");
                                 this._popPlankToRoad();
                                 this.changePlayerState(CharacterAnimation.Planche);
                             }
@@ -995,12 +1521,20 @@
                     break;
                 case CharacterAnimation.Jump:
                     switch (colliderName) {
+                        case "arrvial":
+                            if (this.juageRoadDistance()) {
+                                if (this.player.transform.localPositionY < 0) {
+                                    this.player.transform.localPositionY = 0;
+                                }
+                                this._moveArrivalPoint(this.outInfo.collider.owner);
+                            }
+                            break;
+                        case "plank":
                         case "Turn_45_L":
                         case "Turn_45_R":
                         case "Turn_45_short_L":
                         case "Turn_45_short_R":
                             if (this.juageRoadDistance()) {
-                                console.log("judge");
                                 this.changePlayerState(CharacterAnimation.Running);
                                 if (this.player.transform.localPositionY < 0) {
                                     this.player.transform.localPositionY = 0;
@@ -1038,6 +1572,10 @@
                 pos = this.blank_point.transform.position.clone();
             }
             let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+            let animator = cube.getComponent(Laya.Animator);
+            animator.play("blank_push");
+            let target_y = cube.transform.localPositionY + 0.2;
+            Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
             cube.transform.rotation = this.blank_point.transform.rotation;
             this.cube_array.push(cube);
             AudioManager.instance().playEffect("Collect");
@@ -1060,6 +1598,84 @@
                 this._canPop = true;
             });
             AudioManager.instance().playEffect("Put");
+        }
+        _clearPlank() {
+            Laya.timer.frameLoop(1, this.player, () => {
+                if (this.cube_array.length <= 0) {
+                    Laya.timer.clearAll(this.player);
+                    return;
+                }
+                let cube = this.cube_array.pop();
+                this.cube_count--;
+                Pool.instance.reversePlankHandCube(cube);
+            });
+        }
+        _moveArrivalPoint(arrival) {
+            if (this._isMoveArrival) {
+                return;
+            }
+            if (!arrival) {
+                return;
+            }
+            this._clearPlank();
+            this.changePlayerState(CharacterAnimation.Running);
+            let pos = arrival.transform.position;
+            this._isMoveArrival = true;
+            this._clearMoveTween();
+            this.charactor_tween.to(this.player.transform, { localPositionX: pos.x, localPositionZ: pos.z }, 1, null, this.moveArrivalpointHandler);
+        }
+        _clearMoveTween() {
+            this.charactor_tween.clear();
+        }
+        moveArrivalpointCallback() {
+            MiniGameManager.instance().EndGame();
+            this.changePlayerState(CharacterAnimation.Dance);
+        }
+        setRelifePart(part) {
+            if (!this._relifePart) {
+                this._relifePart = part;
+                return;
+            }
+            if (this._relifePart != part) {
+                this._relifePart = part;
+            }
+        }
+        relifeCallback() {
+            if (this._relifePart) {
+                let relifePos = this._relifePart.transform.position.clone();
+                this.player.transform.position = new Laya.Vector3(relifePos.x, 0, relifePos.z);
+                MiniGameManager.instance().ResumeGame();
+            }
+            else {
+            }
+        }
+    }
+
+    class Water extends Obj {
+        onAwake() {
+            super.onAwake();
+            this._water = this.owner;
+            this._mat = this._water.meshRenderer.material;
+        }
+        init(data) {
+            super.init(data);
+        }
+        onUpdate() {
+            if (Laya.timer.delta >= 100) {
+                return;
+            }
+            this.WaterFloat();
+        }
+        WaterFloat() {
+            if (!this._mat) {
+                return;
+            }
+            let uv_y = this._mat.tilingOffsetY;
+            let uv_x = this._mat.tilingOffsetX;
+            let timer = Laya.timer.delta / 1000;
+            this._mat.tilingOffsetY += 0.01 * 0.02 * (Math.sin(uv_x * 3.5 + timer * 0.35) + Math.sin(uv_x * 4.8 + timer * 1.05) + Math.sin(uv_x * 7.3 + timer * 0.45)) / 3.0;
+            this._mat.tilingOffsetX += 0.12 * 0.02 * (Math.sin(uv_y * 4.0 + timer * 0.5) + Math.sin(uv_y * 6.8 + timer * 0.75) + Math.sin(uv_y * 11.3 + timer * 0.2)) / 3.0;
+            this._mat.tilingOffsetY += 0.12 * 0.02 * (Math.sin(uv_x * 4.2 + timer * 0.64) + Math.sin(uv_x * 6.3 + timer * 1.65) + Math.sin(uv_x * 8.2 + timer * 0.45)) / 3.0;
         }
     }
 
@@ -1261,6 +1877,551 @@
             return this;
         }
     }
+
+    var Handler$1 = Laya.Handler;
+    var Vector3$2 = Laya.Vector3;
+    var Quaternion$1 = Laya.Quaternion;
+    class GameManager {
+        constructor() {
+            this.mapBox = new Box3();
+            this.entitys = {};
+            this.isGameReady = false;
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new GameManager();
+            }
+            return this._instance;
+        }
+        setUIScene(scene) {
+            this.scene_2d = scene;
+        }
+        loadLevel(level) {
+            return new Promise(resolve => {
+                Promise.all([
+                    this.loadScene3D(GameDefine.scenePath),
+                    this.loadConfig(level),
+                    this.loadSounds(),
+                ]).then(ret => {
+                    this.data = ret[1];
+                    this.data.objs.sort((a, b) => a.transform[14] - b.transform[14]);
+                    this.camera = this.scene_3d.getChildByName("Main Camera");
+                    this.camera.addComponent(Camera);
+                    this.camera.enableHDR = false;
+                    this.map = new Laya.Sprite3D("Map", true);
+                    this.map.transform.position = Vector3$2.zero;
+                    this.map.transform.setWorldLossyScale(Vector3$2.one);
+                    this.map.transform.rotation = Quaternion$1.DEFAULT;
+                    this.scene_3d.addChild(this.map);
+                    Laya.stage.getChildByName("root").addChildAt(this.scene_3d, 0);
+                    console.log(Laya.stage, "root");
+                    GameData.scene3d = this.scene_3d;
+                    GameData.map = this.map;
+                }).then(() => {
+                    this.init().then(resolve);
+                });
+            });
+        }
+        loadScene3D(path) {
+            return new Promise(resolve => {
+                Laya.loader.create(path, Laya.Handler.create(this, () => {
+                    this.scene_3d = Laya.loader.getRes(path);
+                    resolve(this.scene_3d);
+                }));
+            });
+        }
+        loadConfig(level) {
+            let fn = GameDefine.levelRoot + 'Lv_' + level + '.json';
+            return new Promise(resolve => {
+                let t1 = new Date().getTime();
+                let ret = Laya.loader.load(fn, Handler$1.create(null, d => {
+                    console.log('load:', fn, new Date().getTime() - t1, 'ms');
+                    resolve(d);
+                }), null, Laya.Loader.JSON);
+                ret.once(Laya.Event.ERROR, null, url => {
+                    console.log('load config error!', url, 'return home page');
+                });
+            });
+        }
+        loadSounds() {
+            return new Promise(resolve => {
+                let arr = [];
+                for (let i = 0; i < GameDefine.sounds.length; i++) {
+                    let name = GameDefine.sounds[i];
+                    arr.push(new Promise(resolve2 => {
+                        Laya.loader.create(GameDefine.soundPath + name, Handler$1.create(null, () => {
+                            resolve2();
+                        }));
+                    }));
+                }
+                Promise.all(arr).then(() => {
+                    Laya.timer.frameOnce(1, null, resolve);
+                });
+            });
+        }
+        init() {
+            return new Promise(resolve => {
+                this.mapBox.makeEmpty();
+                this.loadPrefabs().then(() => {
+                    let pa = [
+                        this.loadObjs(),
+                    ];
+                    Promise.all(pa).then(() => {
+                        this.compileShaders();
+                        this.onGameReady();
+                    });
+                });
+            });
+        }
+        onGameReady() {
+            console.log("ongameReady+++++++++++++++++++");
+            if (!this.isGameReady) {
+                this.isGameReady = true;
+            }
+            else {
+            }
+            ES.instance.on(ES.on_clear_scene, this, this.clearScene);
+        }
+        compileShaders() {
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'COLOR', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'ADDTIVEFOG', 'STRETCHEDBILLBOARD', 'COLOROVERLIFETIME', 'SIZEOVERLIFETIMECURVE', 'SHAPE', 'TINTCOLOR']);
+            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'TEXTURESHEETANIMATIONCURVE', 'SHAPE', 'TINTCOLOR']);
+            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIMESEPERATE', 'SHAPE', 'TINTCOLOR']);
+            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'SHAPE', 'TINTCOLOR']);
+            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'ADDTIVEFOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'TEXTURESHEETANIMATIONCURVE', 'SHAPE', 'TINTCOLOR']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'TILINGOFFSET', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'TILINGOFFSET', 'FOG']);
+            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'TILINGOFFSET', 'FOG']);
+        }
+        loadPrefabs() {
+            return new Promise(resolve => {
+                let arr = [];
+                for (let i = 0; i < GameDefine.preload.length; i++) {
+                    let name = GameDefine.preload[i];
+                    arr.push(new Promise(resolve2 => {
+                        Laya.Sprite3D.load(GameDefine.prefabRoot + name, Handler$1.create(null, (sp) => {
+                            this.scene_3d.addChild(sp);
+                            sp.transform.position = new Laya.Vector3(0, 0, 0);
+                            Laya.timer.frameOnce(1, null, a1 => {
+                                this.scene_3d.removeChild(a1);
+                                resolve2();
+                            }, [sp]);
+                        }));
+                    }));
+                }
+                Promise.all(arr).then(() => {
+                    Laya.timer.frameOnce(1, null, resolve);
+                });
+            });
+        }
+        loadObjs() {
+            return new Promise(resolve => {
+                if (this.data.objs)
+                    this.data.objs.map(d => {
+                        let obj = this.loadObj(d);
+                        this.mapBox.expandByObject(obj.owner);
+                    });
+                resolve();
+            });
+        }
+        loadObj(d) {
+            let ins = this.entitys[d.id];
+            if (ins)
+                return ins;
+            let tag = d.tag;
+            let url = GameDefine.prefabRoot + tag + '.lh';
+            let prefab = Laya.loader.getRes(url);
+            let clone = Laya.Sprite3D.instantiate(prefab, this.map);
+            switch (d.tag) {
+                case "water":
+                    ins = clone.addComponent(Water);
+                    break;
+                case "character_base":
+                    GameData.player = clone;
+                    ins = clone.addComponent(Player);
+                    ins.initScene3d(this.scene_3d);
+                    break;
+                case "enemy":
+                    ins = clone.addComponent(Enemy);
+                    ins.initScene3d(this.scene_3d);
+                    break;
+                default:
+                    ins = clone.addComponent(Obj);
+                    break;
+            }
+            ins.init(d);
+            this.entitys[d.id] = ins;
+            return ins;
+        }
+        clearScene() {
+            Laya.timer.clearAll(this);
+            Laya.timer.clearAll(null);
+            EffectUtil.instance.clear();
+            this.data = null;
+            GameData.scene3d.removeSelf();
+            GameData.scene3d.destroy();
+            GameData.scene3d = null;
+            GameData.canRelife = true;
+            this.entitys = {};
+            ES.instance.offAll();
+            Laya.stage.offAll();
+            Laya.Resource.destroyUnusedResources();
+            GameDefine.gameState = GameState.None;
+        }
+    }
+    GameManager._instance = null;
+
+    var UITYpes;
+    (function (UITYpes) {
+        UITYpes[UITYpes["PANEL"] = 0] = "PANEL";
+        UITYpes[UITYpes["POPUP"] = 1] = "POPUP";
+        UITYpes[UITYpes["TIP"] = 2] = "TIP";
+        UITYpes[UITYpes["TUTORIAL"] = 3] = "TUTORIAL";
+    })(UITYpes || (UITYpes = {}));
+    class PanelBase extends Laya.Script {
+        constructor() {
+            super(...arguments);
+            this.type = UITYpes.PANEL;
+            this.isVisible = false;
+            this.onShowEnd = null;
+        }
+        show(...args) {
+            this.isVisible = true;
+            switch (this.type) {
+                case UITYpes.PANEL:
+                case UITYpes.POPUP:
+                    let panel = this.owner;
+                    panel.scaleX = 0.8;
+                    panel.scaleY = 0.8;
+                    Laya.Tween.to(panel, { scaleX: 1.1, scaleY: 1.1 }, 0.2, () => {
+                        Laya.Tween.to(panel, { scaleX: 1, scaleY: 1 }, 0.1, () => {
+                            if (this.onShowEnd) {
+                                this.onShowEnd();
+                            }
+                        });
+                    });
+                    break;
+            }
+        }
+        ;
+        hide() {
+            this.isVisible = false;
+        }
+        ;
+    }
+
+    class GamePage extends Laya.Script {
+        constructor() {
+            super();
+            this.dictPanelMap = new Map();
+            GamePage.instance = this;
+        }
+        onAwake() {
+            let level = this.loadLevelFromCache();
+            GameManager.instance().loadLevel(level);
+            AudioManager.instance().loadFromCache();
+            this._panelLayer = this.owner.getChildByName("PanelLayer");
+            this._popupLayer = this.owner.getChildByName("PopupLayer");
+            this._tipLayer = this.owner.getChildByName("TipLayer");
+            this.showPage(Constants.UIPage.home, null);
+        }
+        onStart() {
+        }
+        loadLevelFromCache() {
+            const level = Configuration.instance().getConfigData(Constants.LevelTick);
+            let scene_level;
+            if (level) {
+                scene_level = JSON.parse(level);
+            }
+            else {
+                scene_level = 1;
+            }
+            return scene_level;
+        }
+        hidePage(name, cb) {
+            if (this.dictPanelMap.has(name)) {
+                const panel = this.dictPanelMap.get(name);
+                if (panel.parent && panel.parent.active) {
+                    panel.parent.active = false;
+                }
+                panel.removeSelf();
+                const comp = panel.getComponent(PanelBase);
+                if (comp && comp['hide']) {
+                    comp['hide'].apply(comp);
+                }
+                if (cb) {
+                    cb();
+                }
+            }
+        }
+        showPage(name, cb, ...args) {
+            if (this.dictPanelMap.has(name)) {
+                const panel = this.dictPanelMap.get(name);
+                const comp = panel.getComponent(PanelBase);
+                const parent = this.getParent(comp.type);
+                parent.active = true;
+                parent.addChild(panel);
+                cb && cb();
+                return;
+            }
+            let prefab = this.getPrefab(name);
+            let panel = prefab.create();
+            this.dictPanelMap.set(name, panel);
+            const comp = panel.getComponent(PanelBase);
+            const parent = this.getParent(comp.type);
+            parent.active = true;
+            parent.addChild(panel);
+            if (comp && comp['show']) {
+                comp['show'].apply(comp, args);
+            }
+            cb && cb();
+        }
+        hideAll() {
+            this.dictPanelMap.forEach((panel) => {
+                const comp = panel.getComponent(PanelBase);
+                if (comp && comp.isVisible) {
+                    this.hidePage(panel.name);
+                }
+            });
+        }
+        getParent(type) {
+            switch (type) {
+                case UITYpes.PANEL:
+                    return this._panelLayer;
+                case UITYpes.POPUP:
+                    return this._popupLayer;
+                case UITYpes.TIP:
+                    return this._tipLayer;
+            }
+        }
+        getPrefab(name) {
+            switch (name) {
+                case Constants.UIPage.home:
+                    return this.homePage;
+                case Constants.UIPage.playing:
+                    return this.playingPage;
+                case Constants.UIPage.relife:
+                    return this.relifePage;
+            }
+        }
+    }
+    GamePage.instance = null;
+
+    const width = 530;
+    class LoadingPage extends Laya.Script {
+        constructor() {
+            super(...arguments);
+            this._isSubload = false;
+            this._enterGame = false;
+        }
+        onAwake() {
+            this.uiBox = this.owner.getChildAt(0);
+            this.progress = this.uiBox.getChildByName("progress");
+        }
+        onStart() {
+            console.log("onStart");
+            this.progress.width = 1;
+            this.loadSubPackages();
+        }
+        onUpdate() {
+            if (Laya.timer.delta > 100)
+                return;
+            if (this._enterGame)
+                return;
+            this._refreshProgress();
+        }
+        loadSubPackages() {
+            this._subTask = SdkUitl.loadSubpackage("sub1", () => {
+                this.subCallback();
+            });
+            if (this._subTask) {
+                this._subTask.onProgressUpdate(res => {
+                    this._subProgress = res.progress;
+                });
+            }
+        }
+        _refreshProgress() {
+            if (this.progress.width <= 0.9 * width) {
+                if (this._subTask) {
+                    this.progress.width = this._subProgress * 0.9 * width;
+                }
+                else {
+                    this.progress.width += Laya.timer.delta / 1000 * 0.5 * width;
+                }
+            }
+            else {
+                if (this._isSubload) {
+                    this.progress.width += Laya.timer.delta / 1000 * 0.2 * width;
+                }
+                if (this.progress.width >= width) {
+                    this.enterGame();
+                }
+            }
+        }
+        subCallback() {
+            if (!this._isSubload) {
+                Laya.Scene.open("Scenes/Game.scene", false);
+                this._isSubload = true;
+            }
+        }
+        enterGame() {
+            if (!this._enterGame) {
+                console.log("enter game!");
+                Laya.Scene.close("Scenes/Start.scene");
+                this._enterGame = true;
+            }
+        }
+    }
+
+    class Home extends PanelBase {
+        constructor() {
+            super();
+            this.type = UITYpes.PANEL;
+            Home.instance = this;
+        }
+        onAwake() {
+            this._homeUI = this.owner;
+            this._uiBox = this._homeUI.getChildAt(0);
+            this._startBtn = this._uiBox.getChildByName("StartBtn");
+        }
+        show(...args) {
+            super.show();
+        }
+        hide() {
+            super.hide();
+        }
+        onEnable() {
+            this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this));
+        }
+        onDisable() {
+            this._startBtn.off(Laya.Event.CLICK, null, this.startGame.bind(this));
+        }
+        startGame() {
+            if (GameDefine.gameState != GameState.Playing) {
+                MiniGameManager.instance().StartGame();
+                GamePage.instance.hidePage(Constants.UIPage.home, () => {
+                    GamePage.instance.showPage(Constants.UIPage.playing);
+                });
+            }
+        }
+    }
+    Home.instance = null;
+
+    class Playing extends PanelBase {
+        constructor() {
+            super();
+            this.type = UITYpes.PANEL;
+            Playing.instance = this;
+        }
+        onAwake() {
+            this._playing = this.owner;
+            this._uiBox = this._playing.getChildAt(0);
+            this._moveArrow = this._uiBox.getChildByName("MoveArrow");
+        }
+        onEnable() {
+            this._uiBox.on(Laya.Event.MOUSE_DOWN, this, this.hideMoveArrow.bind(this));
+            EventManager.register(EventName.MINI_GAME_RELIFE, this.showRelifeUI, this);
+        }
+        onDisable() {
+            this._uiBox.offAll();
+            EventManager.unRegister(EventName.MINI_GAME_RELIFE, this.showRelifeUI, this);
+        }
+        show(...args) {
+            super.show();
+            this.showMoveArrow();
+        }
+        hide() {
+            super.hide();
+            this.hideMoveArrow();
+        }
+        showMoveArrow() {
+            this._moveArrow.x = this._uiBox.width / 2;
+            this._moveArrow.y = this._uiBox.height / 3 * 2;
+            this._moveArrow.visible = true;
+        }
+        hideMoveArrow() {
+            if (this._moveArrow.visible) {
+                this._moveArrow.visible = false;
+            }
+        }
+        showRelifeUI() {
+            GamePage.instance.hidePage(Constants.UIPage.playing, () => {
+                GamePage.instance.showPage(Constants.UIPage.relife);
+            });
+        }
+    }
+    Playing.instance = null;
+
+    class Relife extends PanelBase {
+        constructor() {
+            super();
+            this.type = UITYpes.PANEL;
+            Relife.instance = this;
+        }
+        onAwake() {
+            this._relife = this.owner;
+            this._uiBox = this._relife.getChildAt(0);
+            this._relifeBtn = this._uiBox.getChildByName("RelifeBtn");
+        }
+        onEnable() {
+            this._relifeBtn.on(Laya.Event.CLICK, this, this.playerRelfie.bind(this));
+        }
+        onDisable() {
+            this._relifeBtn.offAll();
+        }
+        show(...args) {
+            super.show();
+        }
+        hide() {
+            super.hide();
+        }
+        playerRelfie() {
+            GamePage.instance.hidePage(Constants.UIPage.relife, () => {
+                GamePage.instance.showPage(Constants.UIPage.playing, () => {
+                    EventManager.dispatchEvent(EventName.PLAYER_RELIFE);
+                });
+            });
+        }
+    }
+    Relife.instance = null;
+
+    class GameConfig {
+        constructor() {
+        }
+        static init() {
+            var reg = Laya.ClassUtils.regClass;
+            reg("script/Pages/GamePage.ts", GamePage);
+            reg("script/Pages/LoadingPage.ts", LoadingPage);
+            reg("script/UI/Home.ts", Home);
+            reg("script/UI/Playing.ts", Playing);
+            reg("script/UI/Relife.ts", Relife);
+        }
+    }
+    GameConfig.width = 750;
+    GameConfig.height = 1334;
+    GameConfig.scaleMode = "fixedwidth";
+    GameConfig.screenMode = "none";
+    GameConfig.alignV = "top";
+    GameConfig.alignH = "center";
+    GameConfig.startScene = "Scenes/Start.scene";
+    GameConfig.sceneRoot = "";
+    GameConfig.debug = false;
+    GameConfig.stat = true;
+    GameConfig.physicsDebug = false;
+    GameConfig.exportSceneToJson = true;
+    GameConfig.init();
 
     class Mathf {
         static Sin(f) {
@@ -1495,1652 +2656,6 @@
     Mathf.Deg2Rad = 0.01745329;
     Mathf.Rad2Deg = 57.29578;
 
-    class ColorUtil {
-        static toHex(color) {
-            let aColor = [];
-            aColor.push(Mathf.Round(color.r * 255));
-            aColor.push(Mathf.Round(color.g * 255));
-            aColor.push(Mathf.Round(color.b * 255));
-            var strHex = "#";
-            for (var i = 0; i < aColor.length; i++) {
-                var hex = Number(aColor[i]).toString(16);
-                if (hex.length < 2) {
-                    hex = '0' + hex;
-                }
-                strHex += hex;
-            }
-            if (strHex.length !== 7) {
-                strHex = '#ffffff';
-            }
-            return strHex;
-        }
-        static fromHex(sColor) {
-            sColor = sColor.toLowerCase();
-            var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
-            if (sColor && reg.test(sColor)) {
-                if (sColor.length === 4) {
-                    var sColorNew = "#";
-                    for (var i = 1; i < 4; i += 1) {
-                        sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
-                    }
-                    sColor = sColorNew;
-                }
-                var sColorChange = [];
-                for (var i = 1; i < 7; i += 2) {
-                    sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
-                }
-                return new Laya.Color(sColorChange[0] / 255, sColorChange[1] / 255, sColorChange[2] / 255, 1);
-            }
-            return new Laya.Color();
-        }
-    }
-
-    var Vector3$2 = Laya.Vector3;
-    var Vector2 = Laya.Vector2;
-    var box;
-    class MeshUtil {
-        static genMesh(ver, tris, transform, color) {
-            var points = ver[0] instanceof Array ? ver : this.convertPoints(ver);
-            var faces = tris[0] instanceof Array ? tris : this.convertFaces(tris);
-            var normals = this.computeVertexNormals(points, faces);
-            var uvs = this.computeUVs(points, faces);
-            var vertexDeclaration = Laya.VertexMesh.getVertexDeclaration("POSITION,NORMAL,UV");
-            var vertices = [];
-            for (let j = 0; j < ver.length; j += 3) {
-                let i = Mathf.Floor(j / 3);
-                vertices.push(-ver[j], ver[j + 1], ver[j + 2], normals[i].x, normals[i].y, normals[i].z, uvs[i].x, uvs[i].y);
-            }
-            let mesh = Laya.PrimitiveMesh._createMesh(vertexDeclaration, new Float32Array(vertices), new Uint16Array(tris));
-            let s = new Laya.MeshSprite3D(mesh);
-            if (color) {
-                let mat = new Laya.BlinnPhongMaterial();
-                mat.albedoColor = ColorUtil.fromHex(color).toVector4();
-                s.meshRenderer.material = mat;
-            }
-            let m = new Laya.Matrix4x4().fromArray(transform);
-            s.transform.worldMatrix = m;
-            return s;
-        }
-        static computeFaceNormals(ver, faces) {
-            var cb = new Vector3$2(), ab = new Vector3$2();
-            var normals = [];
-            for (let i = 0, f = faces.length; i < f; i++) {
-                let face = faces[i];
-                let vA = ver[face[0]];
-                let vB = ver[face[1]];
-                let vC = ver[face[2]];
-                vC.vsub(vB, cb);
-                vA.vsub(vB, ab);
-                cb.cross(ab, cb);
-                cb.normalize();
-                normals.push(cb);
-            }
-            return normals;
-        }
-        static computeVertexNormals(ver, faces, areaWeighted = true) {
-            let v;
-            let vl;
-            let f;
-            let fl;
-            let face;
-            let vertices;
-            vertices = new Array(ver.length);
-            for (v = 0, vl = ver.length; v < vl; v++) {
-                vertices[v] = new Vector3$2();
-            }
-            if (areaWeighted) {
-                var vA, vB, vC;
-                var cb = new Vector3$2(), ab = new Vector3$2();
-                for (f = 0, fl = faces.length; f < fl; f++) {
-                    face = faces[f];
-                    vA = ver[face[0]];
-                    vB = ver[face[1]];
-                    vC = ver[face[2]];
-                    vC.vsub(vB, cb);
-                    vA.vsub(vB, ab);
-                    cb.cross(ab, cb);
-                    vertices[face[0]].vadd(cb, vertices[face[0]]);
-                    vertices[face[1]].vadd(cb, vertices[face[1]]);
-                    vertices[face[2]].vadd(cb, vertices[face[2]]);
-                }
-            }
-            else {
-                let normals = this.computeFaceNormals(ver, faces);
-                for (f = 0, fl = faces.length; f < fl; f++) {
-                    face = faces[f];
-                    vertices[face[0]].vadd(normals[f], vertices[face[0]]);
-                    vertices[face[1]].vadd(normals[f], vertices[face[1]]);
-                    vertices[face[2]].vadd(normals[f], vertices[face[2]]);
-                }
-            }
-            for (v = 0, vl = vertices.length; v < vl; v++) {
-                vertices[v].normalize();
-            }
-            return vertices;
-        }
-        static computeUVs(ver, faces) {
-            let normals = this.computeVertexNormals(ver, faces);
-            let uvs = [];
-            if (!box)
-                box = new Box3();
-            box.setFromPoints(ver);
-            let size = box.getSize();
-            for (let i = 0, il = ver.length; i < il; i++) {
-                let normal = normals[i];
-                var components = ['x', 'y', 'z'].sort((a, b) => Math.abs(normal[b]) - Math.abs(normal[a]));
-                var x = components[1], y = components[2];
-                var v1 = ver[i];
-                let a = (v1[x] + size[x] * 0.5) / size[x];
-                let b = (v1[y] + size[y] * 0.5) / size[y];
-                uvs.push(new Vector2(a, b));
-            }
-            ;
-            return uvs;
-        }
-        static convertPoints(ver) {
-            var points = [];
-            for (let i = 0; i < ver.length; i += 3) {
-                let p = new Vector3$2(ver[i], ver[i + 1], ver[i + 2]);
-                points.push(p);
-            }
-            return points;
-        }
-        static convertFaces(tris) {
-            var faces = [];
-            for (let i = 0; i < tris.length; i += 3) {
-                let tri = [];
-                let f1 = tris[i];
-                let f2 = tris[i + 1];
-                let f3 = tris[i + 2];
-                tri.push(f1);
-                tri.push(f2);
-                tri.push(f3);
-                faces.push(tri);
-            }
-            return faces;
-        }
-        static convertNormals(normals) {
-            var ret = [];
-            for (let i = 0; i < normals.length; i += 3) {
-                let n = new Vector3$2(normals[i], normals[i + 1], normals[i + 2]);
-                ret.push(n);
-            }
-            return ret;
-        }
-        static ccw(a, b, c) {
-            let m00 = a.x;
-            let m01 = a.y;
-            let m02 = a.z;
-            let m10 = b.x;
-            let m11 = b.y;
-            let m12 = b.z;
-            let m20 = c.x;
-            let m21 = c.y;
-            let m22 = c.z;
-            let f = m00 * (m11 * m22 - m12 * m21)
-                + m01 * (m12 * m20 - m10 * m22)
-                + m02 * (m10 * m21 - m11 * m20);
-            return f > 0 ? 1 : f < 0 ? -1 : 0;
-        }
-    }
-
-    var Vector3$3 = Laya.Vector3;
-    var Vec3 = CANNON.Vec3;
-    class CannonManager {
-        constructor() {
-            this.gravity = -20;
-            this.cannonStep = 1;
-            this.que = [];
-            this.removeQue = [];
-            this.debugSprites = new Array();
-            this.touchRay = new Laya.Ray(new Laya.Vector3(0, 0, 0), new Laya.Vector3(0, 0, 0));
-            this.ray = new CANNON.Ray();
-            this.result = new CANNON.RaycastResult();
-            this.hitInfo = new Laya.HitResult();
-            this.outinfo = new Laya.HitResult();
-            this.forward = new Laya.Vector3(0, 0, 1);
-            this.temp_vec3_1 = new Laya.Vector3(0, 0, 0);
-            this.temp_vec3_2 = new Laya.Vector3(0, 0, 0);
-            this.temp_vec3_3 = new Laya.Vector3(0, 0, 0);
-        }
-        static get instance() {
-            if (!CannonManager._instance)
-                CannonManager._instance = new CannonManager();
-            return CannonManager._instance;
-        }
-        GetTouchPos3D(camera, drawPlane, pos) {
-            let pos_2 = new Laya.Vector2(pos.x, pos.y);
-            camera.viewportPointToRay(pos_2, this.touchRay);
-            this.touchRay = this.touchRay;
-            let hitPoint = this.getIntersectWithLineAndPlane(this.touchRay.origin, this.touchRay.direction, this.forward, drawPlane.transform.position);
-            return hitPoint;
-        }
-        getIntersectWithLineAndPlane(point, direct, planeNormal, planePoint) {
-            Laya.Vector3.subtract(planePoint, point, this.temp_vec3_1);
-            this.temp_vec3_1 = this.temp_vec3_1;
-            let mul = Laya.Vector3.dot(direct, planeNormal);
-            this.temp_vec3_2.setValue(planeNormal.x / mul, planeNormal.y / mul, planeNormal.z / mul);
-            let d = Laya.Vector3.dot(this.temp_vec3_1, this.temp_vec3_2);
-            Laya.Vector3.normalize(direct, this.temp_vec3_1);
-            this.temp_vec3_1 = this.temp_vec3_1;
-            Laya.Vector3.scale(this.temp_vec3_1, d, this.temp_vec3_1);
-            this.temp_vec3_1 = this.temp_vec3_1;
-            Laya.Vector3.add(this.temp_vec3_1, point, this.temp_vec3_3);
-            this.temp_vec3_3 = this.temp_vec3_3;
-            let pos = new Laya.Vector3(0, 0, 0);
-            pos.setValue(this.temp_vec3_3.x, this.temp_vec3_3.y, this.temp_vec3_3.z);
-            return pos;
-        }
-        enableCannonWorld() {
-            console.log('enable cannon world!');
-            this.world = new CANNON.World();
-            this.world.gravity.set(0, this.gravity, 0);
-            this.world.broadphase = new CANNON.NaiveBroadphase();
-            this.world.quatNormalizeFast = false;
-            this.world.quatNormalizeSkip = 0;
-            this.world.defaultContactMaterial.restitution = 0;
-            this.world.defaultMaterial.restitution = -1;
-            this.cannonRefreshDelta = this.cannonStep / 60;
-            ES.instance.on(ES.on_pass_level, this, this.clear);
-            ES.instance.on(ES.on_fail_level, this, this.clear);
-            Laya.timer.frameLoop(this.cannonStep, this, this.updateCannonWorld);
-            this.setWorldIterations(10);
-        }
-        attachTransform(transform, moveByUser, data, collideCallback = null, group = 1, mask = -1, friction = 0.1, restitution = 0.06) {
-            let ret;
-            if (data.components) {
-                ret = [];
-                data.components.map(c => {
-                    let t = transform.owner.find(c.path);
-                    if (!t) {
-                        console.error('can not find', c.path, 'on', transform.owner);
-                        return;
-                    }
-                    if (c.transform) {
-                        t.transform.localMatrix = new Laya.Matrix4x4().fromArray(c.transform);
-                    }
-                    let scale = new Vector3$3().setFromMatrixScale(t.transform.worldMatrix);
-                    let body = this.addBody(t['transform'], c, scale.toArray(), moveByUser, group, mask, friction, restitution);
-                    body.tag = data.tag;
-                    if (collideCallback)
-                        body.addEventListener('collide', collideCallback);
-                    ret.push({
-                        body: body,
-                        transform: t['transform']
-                    });
-                });
-            }
-            return ret;
-        }
-        addBody(transform, components, scale, moveByUser, group, mask, friction, restitution) {
-            let type;
-            let mass = 0;
-            let angularDrag = 0;
-            let drag = 0;
-            let linearFactor = new CANNON.Vec3(1, 1, 1);
-            let angularFactor = new CANNON.Vec3(1, 1, 1);
-            if (components.rigidbody) {
-                if (components.rigidbody.isKinematic)
-                    type = CANNON.Body.KINEMATIC;
-                if (components.rigidbody.useGravity && !components.rigidbody.isKinematic)
-                    type = CANNON.Body.DYNAMIC;
-                if (!components.rigidbody.useGravity && !components.rigidbody.isKinematic)
-                    type = CANNON.Body.STATIC;
-                mass = components.rigidbody.mass;
-                angularDrag = components.rigidbody.angularDrag;
-                drag = components.rigidbody.drag;
-                let cons = components.rigidbody.constraints;
-                linearFactor.x = cons & 2 ? 0 : 1;
-                linearFactor.y = cons & 4 ? 0 : 1;
-                linearFactor.z = cons & 8 ? 0 : 1;
-                angularFactor.x = cons & 16 ? 0 : 1;
-                angularFactor.y = cons & 32 ? 0 : 1;
-                angularFactor.z = cons & 64 ? 0 : 1;
-            }
-            else {
-                type = CANNON.Body.STATIC;
-            }
-            let body = new CANNON.Body({
-                position: new CANNON.Vec3(transform.position.x, transform.position.y, transform.position.z),
-                quaternion: new CANNON.Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w),
-                mass: mass,
-                type: type,
-                material: new CANNON.Material({
-                    friction: friction,
-                    restitution: restitution
-                }),
-                angularVelocity: new CANNON.Vec3(),
-                angularDamping: angularDrag,
-                velocity: new CANNON.Vec3(),
-                linearDamping: drag,
-                fixedRotation: false,
-                collisionFilterGroup: group,
-                collisionFilterMask: mask,
-                linearFactor: linearFactor,
-                angularFactor: angularFactor
-            });
-            let trigger = false;
-            components.colliders.map(co => {
-                if (co.trigger)
-                    trigger = true;
-            });
-            body.collisionResponse = !trigger;
-            this.addShape(body, components.colliders, scale, transform.owner);
-            body.allowSleep = true;
-            body.wakeUp();
-            this.world.addBody(body);
-            this.que.push({
-                type: body.type,
-                transform: transform,
-                body: body,
-                moveByUser: moveByUser,
-                cposition: new Vec3(),
-                cquaternion: new CANNON.Quaternion(),
-                lposition: new Vector3$3(),
-                lquaternion: new Laya.Quaternion(),
-            });
-            return body;
-        }
-        removeBody(transform) {
-            let link = this.queryLinkByTransform(transform);
-            if (link) {
-                this.removeQue.push(link);
-            }
-        }
-        convertBodyType(transform, type) {
-            let link = this.queryLinkByTransform(transform);
-            if (link) {
-                link.body.type = type;
-                switch (type) {
-                    case CANNON.Body.STATIC:
-                        link.moveByUser = true;
-                        link.body.mass = 0;
-                        break;
-                    default:
-                        link.moveByUser = false;
-                        link.body.mass = 1;
-                        break;
-                }
-                link.body.updateMassProperties();
-                link.body.wakeUp();
-                return link.body;
-            }
-        }
-        queryLinkByTransform(transform) {
-            let index = -1;
-            for (let i = 0; i < this.que.length; i++) {
-                let d = this.que[i];
-                if (!d)
-                    continue;
-                if (d.transform === transform) {
-                    index = i;
-                    break;
-                }
-            }
-            if (index != -1) {
-                let t = this.que[index];
-                t.index = index;
-                return t;
-            }
-        }
-        addConstraint(c) {
-            this.world.addConstraint(c);
-        }
-        removeConstraint(c) {
-            this.world.removeConstraint(c);
-        }
-        beforeBodyRemove(body) {
-            for (let i = 0; i < this.world.constraints.length; i++) {
-                let c = this.world.constraints[i];
-                if (c.bodyA === body || c.bodyB === body) {
-                    this.world.constraints.splice(i--, 1);
-                }
-            }
-        }
-        setWorldIterations(iterations) {
-            this.world.solver['iterations'] = iterations;
-        }
-        updateCannonWorld() {
-            while (this.removeQue.length > 0) {
-                let link = this.removeQue.pop();
-                this.beforeBodyRemove(link.body);
-                this.world.removeBody(link.body);
-                delete this.que[link.index];
-            }
-            this.world.step(this.cannonRefreshDelta);
-            for (let i = 0; i < this.que.length; i++) {
-                let d = this.que[i];
-                if (!d)
-                    continue;
-                if (d.body.sleepState === CANNON.Body.SLEEPING && !d.moveByUser)
-                    continue;
-                d.moveByUser ? this.bodyFollowTransform(d) : this.transformFollowBody(d);
-            }
-        }
-        bodyFollowTransform(d) {
-            d.body.position.x = d.transform.position.x;
-            d.body.position.y = d.transform.position.y;
-            d.body.position.z = d.transform.position.z;
-            d.body.quaternion.x = d.transform.rotation.x;
-            d.body.quaternion.y = d.transform.rotation.y;
-            d.body.quaternion.z = d.transform.rotation.z;
-            d.body.quaternion.w = d.transform.rotation.w;
-        }
-        transformFollowBody(d) {
-            d.lposition.x = d.body.position.x;
-            d.lposition.y = d.body.position.y;
-            d.lposition.z = d.body.position.z;
-            d.lquaternion.x = d.body.quaternion.x;
-            d.lquaternion.y = d.body.quaternion.y;
-            d.lquaternion.z = d.body.quaternion.z;
-            d.lquaternion.w = d.body.quaternion.w;
-            d.transform.position = d.lposition;
-            d.transform.rotation = d.lquaternion;
-        }
-        addShape(body, colliders, scale, owner) {
-            for (let i = 0; i < colliders.length; i++) {
-                let data = colliders[i];
-                if (data.type === 'UnityEngine.BoxCollider') {
-                    let center = new CANNON.Vec3().set(-data.center[0] * scale[0], data.center[1] * scale[1], data.center[2] * scale[2]);
-                    let size = new CANNON.Vec3(data.size[0] * scale[0] * 0.5, data.size[1] * scale[1] * 0.5, data.size[2] * scale[2] * 0.5);
-                    let shape = new CANNON.Box(size);
-                    body.addShape(shape, center);
-                }
-                else if (data.type === 'UnityEngine.SphereCollider') {
-                    let center = new CANNON.Vec3().set(-data.center[0] * scale[0], data.center[1] * scale[1], data.center[2] * scale[2]);
-                    let shape = new CANNON.Sphere(data.radius * scale[0]);
-                    body.addShape(shape, center);
-                }
-                else if (data.type === 'UnityEngine.CapsuleCollider') {
-                    let center = new CANNON.Vec3().set(-data.center[0] * scale[0], data.center[1] * scale[1], data.center[2] * scale[2]);
-                    let shape = new CANNON.Cylinder(data.radius, data.radius, data.height, 9);
-                    body.addShape(shape, center);
-                }
-                else if (data.type === 'UnityEngine.MeshCollider') {
-                    let vertices = [];
-                    for (let i = 0; i < data.ver.length; i += 3) {
-                        let d = data.ver;
-                        let p = new Vec3(d[i], d[i + 1], d[i + 2]);
-                        vertices.push(p);
-                    }
-                    let tris = MeshUtil.convertFaces(data.tris);
-                    let shape = new CANNON.ConvexPolyhedron(vertices, tris);
-                    body.addShape(shape);
-                }
-                else {
-                    console.error('unsuport shape type', data.type);
-                }
-            }
-        }
-        clear(index) {
-            if (index === 0) {
-                this.que = [];
-                this.world = null;
-                Laya.timer.clearAll(this);
-            }
-        }
-    }
-
-    class EffectUtil {
-        constructor() {
-            this.effects = {};
-        }
-        static get instance() {
-            if (!this._instance)
-                this._instance = new EffectUtil();
-            return this._instance;
-        }
-        loadEffect(tag, recycleDelay = 1000, pos, parent) {
-            return new Promise(resolve => {
-                if (!this.effects[tag])
-                    this.effects[tag] = [];
-                let arr = this.effects[tag];
-                if (arr.length > 0) {
-                    let p = arr.pop();
-                    parent.addChild(p);
-                    p.transform.position = pos;
-                    if (recycleDelay != -1)
-                        Laya.timer.once(recycleDelay, this, a => this.recycleEffect(a), [p]);
-                    resolve(p);
-                }
-                else {
-                    Laya.Sprite3D.load(GameDefine.prefabRoot + tag + '.lh', Laya.Handler.create(null, (res) => {
-                        let ins = Laya.Sprite3D.instantiate(res);
-                        parent.addChild(ins);
-                        ins.transform.position = pos;
-                        if (recycleDelay != -1)
-                            Laya.timer.once(recycleDelay, this, a => this.recycleEffect(a), [ins]);
-                        resolve(ins);
-                    }));
-                }
-            });
-        }
-        recycleEffect(p) {
-            p.removeSelf();
-            if (!this.effects[p.name])
-                return;
-            this.effects[p.name].push(p);
-        }
-        clear() {
-            for (const k in this.effects) {
-                if (this.effects.hasOwnProperty(k)) {
-                    const arr = this.effects[k];
-                    arr.map(p => p.destroy());
-                }
-            }
-            this.effects = {};
-        }
-    }
-
-    var Handler$1 = Laya.Handler;
-    var Vector3$4 = Laya.Vector3;
-    var Quaternion$1 = Laya.Quaternion;
-    class GameManager {
-        constructor() {
-            this.mapBox = new Box3();
-            this.entitys = {};
-            this.isGameReady = false;
-        }
-        static instance() {
-            if (!this._instance) {
-                this._instance = new GameManager();
-            }
-            return this._instance;
-        }
-        setUIScene(scene) {
-            this.scene_2d = scene;
-        }
-        loadLevel(level) {
-            return new Promise(resolve => {
-                Promise.all([
-                    this.loadScene3D(GameDefine.scenePath),
-                    this.loadConfig(level),
-                    this.loadSounds(),
-                ]).then(ret => {
-                    this.data = ret[1];
-                    this.data.objs.sort((a, b) => a.transform[14] - b.transform[14]);
-                    this.camera = this.scene_3d.getChildByName("Main Camera");
-                    this.camera.addComponent(Camera);
-                    this.camera.enableHDR = false;
-                    this.map = new Laya.Sprite3D("Map", true);
-                    this.map.transform.position = Vector3$4.zero;
-                    this.map.transform.setWorldLossyScale(Vector3$4.one);
-                    this.map.transform.rotation = Quaternion$1.DEFAULT;
-                    this.scene_3d.addChild(this.map);
-                    Laya.stage.getChildByName("root").addChildAt(this.scene_3d, 0);
-                    console.log(Laya.stage, "root");
-                    GameData.scene3d = this.scene_3d;
-                    GameData.map = this.map;
-                    CannonManager.instance.enableCannonWorld();
-                }).then(() => {
-                    this.init().then(resolve);
-                });
-            });
-        }
-        loadScene3D(path) {
-            return new Promise(resolve => {
-                Laya.loader.create(path, Laya.Handler.create(this, () => {
-                    this.scene_3d = Laya.loader.getRes(path);
-                    resolve(this.scene_3d);
-                }));
-            });
-        }
-        loadConfig(level) {
-            let fn = GameDefine.levelRoot + 'Lv_' + level + '.json';
-            return new Promise(resolve => {
-                let t1 = new Date().getTime();
-                let ret = Laya.loader.load(fn, Handler$1.create(null, d => {
-                    console.log('load:', fn, new Date().getTime() - t1, 'ms');
-                    resolve(d);
-                }), null, Laya.Loader.JSON);
-                ret.once(Laya.Event.ERROR, null, url => {
-                    console.log('load config error!', url, 'return home page');
-                });
-            });
-        }
-        loadSounds() {
-            return new Promise(resolve => {
-                let arr = [];
-                for (let i = 0; i < GameDefine.sounds.length; i++) {
-                    let name = GameDefine.sounds[i];
-                    arr.push(new Promise(resolve2 => {
-                        Laya.loader.create(GameDefine.soundPath + name, Handler$1.create(null, () => {
-                            resolve2();
-                        }));
-                    }));
-                }
-                Promise.all(arr).then(() => {
-                    Laya.timer.frameOnce(1, null, resolve);
-                });
-            });
-        }
-        init() {
-            return new Promise(resolve => {
-                this.mapBox.makeEmpty();
-                this.loadPrefabs().then(() => {
-                    let pa = [
-                        this.loadObjs(),
-                    ];
-                    Promise.all(pa).then(() => {
-                        this.compileShaders();
-                        this.onGameReady();
-                    });
-                });
-            });
-        }
-        onGameReady() {
-            console.log("ongameReady+++++++++++++++++++");
-            if (!this.isGameReady) {
-                this.isGameReady = true;
-            }
-            else {
-            }
-            ES.instance.on(ES.on_clear_scene, this, this.clearScene);
-        }
-        compileShaders() {
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'CASTSHADOW', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'COLOR', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'COLOR', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'ADDTIVEFOG', 'STRETCHEDBILLBOARD', 'COLOROVERLIFETIME', 'SIZEOVERLIFETIMECURVE', 'SHAPE', 'TINTCOLOR']);
-            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'TEXTURESHEETANIMATIONCURVE', 'SHAPE', 'TINTCOLOR']);
-            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIMESEPERATE', 'SHAPE', 'TINTCOLOR']);
-            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'SHAPE', 'TINTCOLOR']);
-            Laya.Shader3D.compileShaderByDefineNames('PARTICLESHURIKEN', 0, 0, ['DIFFUSEMAP', 'FOG', 'ADDTIVEFOG', 'SPHERHBILLBOARD', 'COLOROVERLIFETIME', 'ROTATIONOVERLIFETIMERANDOMCONSTANTS', 'SIZEOVERLIFETIMECURVE', 'ROTATIONOVERLIFETIME', 'TEXTURESHEETANIMATIONCURVE', 'SHAPE', 'TINTCOLOR']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'SHADOWMAP_PSSM1', 'FOG', 'SHADOWMAP_PCF3']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'UV1', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIRECTIONLIGHT', 'UV', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'TILINGOFFSET', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'TILINGOFFSET', 'FOG']);
-            Laya.Shader3D.compileShaderByDefineNames('BLINNPHONG', 0, 0, ['GPU_INSTANCE', 'DIFFUSEMAP', 'DIRECTIONLIGHT', 'UV', 'UV1', 'RECEIVESHADOW', 'TILINGOFFSET', 'FOG']);
-        }
-        loadPrefabs() {
-            return new Promise(resolve => {
-                let arr = [];
-                for (let i = 0; i < GameDefine.preload.length; i++) {
-                    let name = GameDefine.preload[i];
-                    arr.push(new Promise(resolve2 => {
-                        Laya.Sprite3D.load(GameDefine.prefabRoot + name, Handler$1.create(null, (sp) => {
-                            this.scene_3d.addChild(sp);
-                            sp.transform.position = new Laya.Vector3(0, 0, 0);
-                            Laya.timer.frameOnce(1, null, a1 => {
-                                this.scene_3d.removeChild(a1);
-                                resolve2();
-                            }, [sp]);
-                        }));
-                    }));
-                }
-                Promise.all(arr).then(() => {
-                    Laya.timer.frameOnce(1, null, resolve);
-                });
-            });
-        }
-        loadObjs() {
-            return new Promise(resolve => {
-                if (this.data.objs)
-                    this.data.objs.map(d => {
-                        let obj = this.loadObj(d);
-                        this.mapBox.expandByObject(obj.owner);
-                    });
-                resolve();
-            });
-        }
-        loadObj(d) {
-            let ins = this.entitys[d.id];
-            if (ins)
-                return ins;
-            let tag = d.tag;
-            let url = GameDefine.prefabRoot + tag + '.lh';
-            let prefab = Laya.loader.getRes(url);
-            let clone = Laya.Sprite3D.instantiate(prefab, this.map);
-            switch (d.tag) {
-                case "character_base":
-                    ins = clone.addComponent(Player);
-                    console.log(d, "ddd");
-                    ins.initScene3d(this.scene_3d);
-                    break;
-                default:
-                    ins = clone.addComponent(Obj);
-                    break;
-            }
-            ins.init(d);
-            this.entitys[d.id] = ins;
-            return ins;
-        }
-        clearScene() {
-            Laya.timer.clearAll(this);
-            Laya.timer.clearAll(null);
-            EffectUtil.instance.clear();
-            CannonManager.instance.clear();
-            this.data = null;
-            GameData.scene3d.removeSelf();
-            GameData.scene3d.destroy();
-            GameData.scene3d = null;
-            this.entitys = {};
-            ES.instance.offAll();
-            Laya.stage.offAll();
-            Laya.Resource.destroyUnusedResources();
-            GameDefine.gameState = GameState.None;
-        }
-    }
-    GameManager._instance = null;
-
-    class GamePage extends Laya.Script {
-        onAwake() {
-            let level = this.loadLevelFromCache();
-            GameManager.instance().loadLevel(level);
-            AudioManager.instance().loadFromCache();
-        }
-        loadLevelFromCache() {
-            const level = Configuration.instance().getConfigData(Constants.LevelTick);
-            let scene_level;
-            if (level) {
-                scene_level = JSON.parse(level);
-            }
-            else {
-                scene_level = 1;
-            }
-            return scene_level;
-        }
-    }
-
-    class Home extends Laya.Script {
-        constructor() {
-            super();
-            Home.instance = this;
-        }
-        onAwake() {
-            this._homeUI = this.owner;
-            this._uiBox = this._homeUI.getChildAt(0);
-            this._startBtn = this._uiBox.getChildByName("StartBtn");
-        }
-        onEnable() {
-            this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this));
-        }
-        onDisable() {
-            this._startBtn.off(Laya.Event.CLICK, null, this.startGame.bind(this));
-        }
-        close() {
-            this._uiBox.removeSelf();
-        }
-        startGame() {
-            if (GameDefine.gameState != GameState.Playing) {
-                MiniGameManager.instance().StartGame();
-                this.close();
-            }
-        }
-    }
-    Home.instance = null;
-
-    const voidAdUnitId = "adunit-80bb77f0c855a581";
-    const bannerUnitId = "adunit-7f5a5baa1cf4c0bf";
-    const interstitialId = "adunit-50e928fd1ef1c080";
-    const gridUnitId = "adunit-3df25aa6f16f67e6";
-    const appidOfGameList = "";
-    class WeChatManager {
-        constructor() {
-        }
-        static SingletonList_expand() {
-            Laya.SingletonList.prototype["_remove"] = function (index) {
-                if (index == -1) {
-                    return;
-                }
-                this.length--;
-                if (index !== this.length) {
-                    var end = this.elements[this.length];
-                    if (end) {
-                        this.elements[index] = end;
-                        end._setIndexInList(index);
-                    }
-                }
-            };
-            var old_func = Laya.SimpleSingletonList.prototype["add"];
-            Laya.SimpleSingletonList.prototype["add"] = function (element) {
-                var index = element._getIndexInList();
-                if (index !== -1) {
-                    return;
-                }
-                old_func.call(this, element);
-            };
-        }
-        static ShowShareMenu(_withShareTicket = false) {
-            if (Laya.Browser.onWeiXin) {
-                wx.showShareMenu({
-                    withShareTicket: _withShareTicket,
-                    success: () => {
-                        wx.onShareAppMessage(() => {
-                            var r = Math.random();
-                            let n = r < 0.25 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : 4;
-                            return {
-                                title: this.shareWords[n - 1],
-                                imageUrl: "subPackage/sub/share" + String(n) + ".jpg",
-                                query: "",
-                                success: () => {
-                                }
-                            };
-                        });
-                    },
-                    fail: () => {
-                        console.log("显示当前页面的转发按钮--失败！");
-                    }
-                });
-            }
-        }
-        static ShareGame(_imageUrl, _title = null, _query = null) {
-            if (Laya.Browser.onWeiXin) {
-                wx.shareAppMessage({
-                    title: _title,
-                    imageUrl: _imageUrl,
-                    query: _query
-                });
-                var startTime = new Date().getTime();
-                var LeaveBack = function () {
-                    wx.offHide(LeaveBack);
-                };
-                wx.onHide(LeaveBack);
-                var callback = function () {
-                    wx.offShow(callback);
-                    var endTime = new Date().getTime();
-                    if (Math.abs(startTime - endTime) < 3000) {
-                        if (this.isFirstShare) {
-                            this.isFirstShare = false;
-                        }
-                        else {
-                        }
-                    }
-                    else {
-                    }
-                };
-                wx.onShow(callback);
-            }
-        }
-        static PostMessage(message) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.getOpenDataContext) {
-                    if (this.openDataContext == null) {
-                        this.openDataContext = wx.getOpenDataContext();
-                    }
-                    this.openDataContext.postMessage(message);
-                }
-            }
-        }
-        static CreateUserInfoButton(callBack) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.createUserInfoButton) {
-                    var userInfoButton = wx.createUserInfoButton({
-                        type: 'image',
-                        image: 'LoadUI/Enter.png',
-                        style: {
-                            top: wx.getSystemInfoSync().windowHeight / 2,
-                            left: wx.getSystemInfoSync().windowWidth / 2 - 100,
-                            width: 200,
-                            height: 60
-                        }
-                    });
-                    userInfoButton.onTap((res) => {
-                        userInfoButton.destroy();
-                        this.userInfo = res.userInfo;
-                        console.log("用户信息", this.userInfo);
-                        if (this.userInfo == undefined) {
-                            this.userInfo = { nickName: "Player", avatarUrl: "PlayerUI/h_0.png" };
-                        }
-                        localStorage.setItem("nickName", this.userInfo.nickName);
-                        localStorage.setItem("userhead", this.userInfo.avatarUrl);
-                        callBack();
-                    });
-                }
-                else {
-                    wx.authorize({
-                        scope: "scope.userInfo",
-                        success: function () {
-                            wx.getUserInfo({
-                                success: (res) => {
-                                    this.userInfo = res.userInfo;
-                                    console.log("***用户信息", this.userInfo);
-                                    if (this.userInfo == undefined) {
-                                        this.userInfo = { nickName: "Player", avatarUrl: "PlayerUI/h_0.png" };
-                                    }
-                                    localStorage.setItem("nickName", this.userInfo.nickName);
-                                    localStorage.setItem("userhead", this.userInfo.avatarUrl);
-                                    callBack();
-                                },
-                                fail: (err) => {
-                                    console.log("***用户信息获取失败", err);
-                                    localStorage.setItem("nickName", "Player");
-                                    localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                                    callBack();
-                                }
-                            });
-                        },
-                        fail: (err) => {
-                            console.log("***授权失败", err);
-                            localStorage.setItem("nickName", "Player");
-                            localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                            callBack();
-                        }
-                    });
-                }
-            }
-        }
-        static GetUserInfo(callBack) {
-            if (Laya.Browser.window.wx) {
-                if (wx.authorize) {
-                    wx.authorize({
-                        scope: "scope.userInfo",
-                        success: function () {
-                            wx.getUserInfo({
-                                success: (res) => {
-                                    this.userInfo = res.userInfo;
-                                    console.log("***用户信息", this.userInfo);
-                                    if (this.userInfo == undefined) {
-                                        this.userInfo = { nickName: "Player", avatarUrl: "PlayerUI/h_0.png" };
-                                    }
-                                    localStorage.setItem("nickName", this.userInfo.nickName);
-                                    localStorage.setItem("userhead", this.userInfo.avatarUrl);
-                                    callBack();
-                                },
-                                fail: (err) => {
-                                    console.log("***用户信息获取失败", err);
-                                    localStorage.setItem("nickName", "Player");
-                                    localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                                    callBack();
-                                }
-                            });
-                        },
-                        fail: (err) => {
-                            console.log("***授权失败", err);
-                            localStorage.setItem("nickName", "Player");
-                            localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                            callBack();
-                        }
-                    });
-                }
-                else {
-                    localStorage.setItem("nickName", "Player");
-                    localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                    callBack();
-                }
-            }
-            else {
-                localStorage.setItem("nickName", "Player");
-                localStorage.setItem("userhead", "PlayerUI/h_0.png");
-                callBack();
-            }
-        }
-        static LoadSubpackage(subPackageName, callBack) {
-            if (Laya.Browser.window.wx) {
-                if (wx.loadSubpackage) {
-                    wx.loadSubpackage({
-                        name: subPackageName,
-                        success: (err) => {
-                            console.log("分包加载成功", err);
-                            callBack();
-                        },
-                        fail: (err) => {
-                            console.log("分包加载失败", err);
-                        }
-                    });
-                }
-                else {
-                    Laya.Browser.window.require(subPackageName + "/game.js");
-                    Laya.timer.once(1000, this, () => {
-                        callBack();
-                    });
-                }
-            }
-            else {
-                callBack();
-            }
-        }
-        static ShowToast(title = "", icon = "none", duration = 1500) {
-            if (Laya.Browser.window.wx) {
-                wx.showToast({
-                    title: title,
-                    icon: icon,
-                    duration: duration,
-                });
-            }
-        }
-        static MoreGameLink(_qrcodeurl, _appid = "") {
-            if (Laya.Browser.onWeiXin) {
-                if (_appid != "") {
-                    if (wx.navigateToMiniProgram) {
-                        wx.navigateToMiniProgram({
-                            appId: _appid
-                        });
-                    }
-                    else {
-                        this.ShowQRCode(_qrcodeurl);
-                    }
-                }
-                else {
-                    this.ShowQRCode(_qrcodeurl);
-                }
-            }
-        }
-        static ShowQRCode(_qrcodeurl) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.previewImage) {
-                    wx.previewImage({
-                        current: null,
-                        urls: [_qrcodeurl]
-                    });
-                }
-            }
-        }
-        static SetVibration(_isShort = true, callBack = null) {
-            if (Laya.Browser.onWeiXin) {
-                if (_isShort) {
-                    if (wx.vibrateShort)
-                        wx.vibrateShort({ success: () => { if (callBack)
-                                callBack(); } });
-                }
-                else {
-                    if (wx.vibrateLong)
-                        wx.vibrateLong({ success: () => { if (callBack)
-                                callBack(); } });
-                }
-            }
-        }
-        static getSystemInfo() {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.getSystemInfoSync) {
-                    let obj = wx.getSystemInfoSync();
-                    console.log(obj, "systeminfo");
-                    return obj;
-                }
-                else {
-                }
-            }
-        }
-        static WxOnShow(callBack = null) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.onShow) {
-                    wx.onShow((res) => {
-                        if (callBack) {
-                            callBack();
-                        }
-                    });
-                }
-            }
-        }
-        static WxOnHide(callBack = null) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.onHide) {
-                    wx.onHide((res) => {
-                        if (callBack) {
-                            callBack();
-                        }
-                    });
-                }
-            }
-        }
-        static CreateRewardAd() {
-            if (Laya.Browser.onWeiXin) {
-                if (voidAdUnitId == "") {
-                    console.log("视频广告ID未设置！请检查！");
-                    return;
-                }
-                if (wx.createRewardedVideoAd) {
-                    if (this.rewardAd == null) {
-                        this.rewardAd = wx.createRewardedVideoAd({ adUnitId: voidAdUnitId });
-                    }
-                    this.rewardAd.onLoad(() => {
-                        console.log("拉取视频成功");
-                        this.isHasAd = true;
-                    });
-                    this.rewardAd.onError((err) => {
-                        console.log("拉取视频失败", err);
-                    });
-                    this.rewardAd.onClose((res) => {
-                        this.rewardAd_CallBack(res);
-                    });
-                }
-            }
-        }
-        static rewardAd_CallBack(res) {
-            console.log("用户点击了【关闭广告】按钮");
-            if (res && res.isEnded || res === undefined) {
-                switch (this.reword_index) {
-                    default:
-                        break;
-                }
-                this.isHasAd = false;
-            }
-            else {
-                console.log("未看完广告");
-                this.isHasAd = false;
-                this.ShowToast("只有观看完整视频才能获得奖励哦", "none", 1500);
-            }
-        }
-        static RewordAD() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.netWorkType == "" || this.netWorkType == "none") {
-                    this.ShowToast("暂无可播放的视频,请稍后再试!");
-                    return;
-                }
-                if (wx.createRewardedVideoAd) {
-                    if (!this.isHasAd) {
-                        wx.showToast({
-                            title: "暂时没有可播放的广告，请稍后再试",
-                            icon: "none",
-                            duration: 1500
-                        });
-                        this.rewardAd.onLoad();
-                        return;
-                    }
-                    this.rewardAd.show();
-                }
-            }
-        }
-        static onNetworkStatusChange() {
-            if (Laya.Browser.window.wx && Laya.Browser.window.wx.onNetworkStatusChange) {
-                Laya.Browser.window.wx.onNetworkStatusChange((res) => {
-                    console.log("当前是否有网络连接：", res.isConnected);
-                    console.log("网络类型：", res.networkType);
-                    console.log("在此可添加逻辑代码，并注释本行代码");
-                    this.netWorkType = res.networkType;
-                });
-            }
-        }
-        static showVideoAd(callBack_Success, callBack_Fail) {
-            if (!this.isHasAd)
-                return;
-            if (this.rewardAd) {
-                this.rewardAd.show();
-                this.callBack_Success = callBack_Success;
-                this.callBack_Fail = callBack_Fail;
-            }
-        }
-        static ShowRewardAd(callBack, defafun = () => { }) {
-            if (Laya.Browser.onWeiXin) {
-                if (!this.isHasAd) {
-                    return;
-                }
-                ;
-                if (this.rewardAd != null) {
-                    this.rewardAd.show();
-                    this.rewardAd.onClose((res) => {
-                        this.rewardAd.offClose();
-                        if (res && res.isEnded || res === undefined) {
-                            callBack();
-                            this.isHasAd = false;
-                        }
-                        else {
-                            console.log("未看完广告");
-                            this.isHasAd = false;
-                            defafun();
-                        }
-                        callBack = () => { };
-                        this.BGM_PLAY('subPackage/audio/BGM.mp3');
-                    });
-                }
-            }
-        }
-        static CreateBanner() {
-            if (Laya.Browser.onWeiXin) {
-                if (bannerUnitId == "") {
-                    console.warn("条形广告ID未设置！请检查！");
-                    return;
-                }
-                if (wx.createBannerAd) {
-                    if (this.bannerAd == null) {
-                        this.bannerAd = wx.createBannerAd({
-                            adUnitId: bannerUnitId,
-                            adIntervals: 30,
-                            style: {
-                                left: 0,
-                                top: 0,
-                                width: Laya.Browser.width
-                            }
-                        });
-                    }
-                    else
-                        return;
-                    this.bannerAd.onError((err) => {
-                        console.log("banner 加载失败", err);
-                        this.ClearBanner();
-                    });
-                    this.bannerAd.onLoad((err) => {
-                        console.log("banner 加载成功", err);
-                    });
-                    this.bannerAd.onResize((res) => {
-                        this.bannerAd.style.left = (wx.getSystemInfoSync().screenWidth - this.bannerAd.style.realWidth) / 2;
-                        if (Laya.Browser.clientHeight / Laya.Browser.clientWidth > 2 && Laya.Browser.onIOS) {
-                            this.bannerAd.style.top = wx.getSystemInfoSync().screenHeight - this.bannerAd.style.realHeight * 1.2;
-                        }
-                        else {
-                            this.bannerAd.style.top = wx.getSystemInfoSync().screenHeight - this.bannerAd.style.realHeight;
-                        }
-                    });
-                    if (Laya.Browser.clientHeight / Laya.Browser.clientWidth <= 1.34 && Laya.Browser.clientHeight / Laya.Browser.clientWidth > 1.33) {
-                        this.bannerAd.style.width = 300;
-                    }
-                    else {
-                        this.bannerAd.style.width = 300;
-                    }
-                    this.bannerAd.show();
-                }
-            }
-        }
-        static ClearBanner() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.bannerAd != null) {
-                    if (this.bannerAd.destroy)
-                        this.bannerAd.destroy();
-                    this.bannerAd = null;
-                }
-            }
-        }
-        static ShowBanner() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.bannerAd != null) {
-                    if (this.bannerAd.show)
-                        this.bannerAd.show();
-                }
-                else {
-                    this.CreateBanner();
-                }
-            }
-        }
-        static HideBanner() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.bannerAd != null) {
-                    if (this.bannerAd.hide) {
-                        this.bannerAd.hide();
-                    }
-                    else if (this.bannerAd.destroy) {
-                        this.bannerAd.destroy();
-                    }
-                }
-            }
-        }
-        static CreateGridAd() {
-            if (Laya.Browser.onWeiXin) {
-                if (gridUnitId == "") {
-                    console.warn("格子广告ID未设置！请检查！");
-                    return;
-                }
-                if (wx.createGridAd) {
-                    console.log("开始创建格子广告");
-                    if (this.gridAd == null) {
-                        this.gridAd = wx.createGridAd({
-                            adUnitId: gridUnitId,
-                            adTheme: 'white',
-                            gridCount: 5,
-                            style: {
-                                left: 0,
-                                top: 0,
-                                width: 330,
-                                opacity: 0.8
-                            }
-                        });
-                    }
-                    else
-                        return;
-                    this.gridAd.onError((err) => {
-                        console.log("grid 加载失败", err);
-                        this.loadGrid = false;
-                        this.ClearGrid();
-                    });
-                    this.gridAd.onLoad((err) => {
-                        console.log("grid 加载成功", err);
-                        this.loadGrid = true;
-                    });
-                    this.gridAd.onResize((res) => {
-                        this.gridAd.style.left = (wx.getSystemInfoSync().screenWidth - this.gridAd.style.realWidth) / 2;
-                        if (Laya.Browser.height / Laya.Browser.width > 2 && Laya.Browser.onIOS) {
-                            this.gridAd.style.top = wx.getSystemInfoSync().screenHeight - this.gridAd.style.realHeight * 1.3;
-                        }
-                        else {
-                            this.gridAd.style.top = wx.getSystemInfoSync().screenHeight - this.gridAd.style.realHeight;
-                        }
-                    });
-                    if (Laya.Browser.onIOS && Laya.Browser.clientHeight / Laya.Browser.clientWidth - 1.3 <= 0.04) {
-                        this.gridAd.style.width = Laya.Browser.clientWidth / 2;
-                    }
-                    else {
-                        this.gridAd.style.width = Laya.Browser.clientWidth;
-                    }
-                }
-                else {
-                    console.log("没有格子广告创建方法");
-                }
-            }
-        }
-        static ShowGrid() {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.createGridAd) {
-                    if (this.gridAd != null) {
-                        if (this.loadGrid) {
-                            if (this.gridAd.show)
-                                this.gridAd.show();
-                            else {
-                                console.log("格子广告没有show方法");
-                            }
-                        }
-                        else {
-                            this.ShowBanner();
-                        }
-                    }
-                    else {
-                        console.log("没有格子广告 重新创建");
-                        this.CreateGridAd();
-                    }
-                }
-                else {
-                    this.ShowBanner();
-                }
-            }
-        }
-        static ClearGrid() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.gridAd != null) {
-                    if (this.gridAd.destroy)
-                        this.gridAd.destroy();
-                    this.gridAd = null;
-                }
-            }
-        }
-        static HideGrid() {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.createGridAd) {
-                    if (this.gridAd != null) {
-                        if (this.loadGrid) {
-                            if (this.gridAd.hide) {
-                                this.gridAd.hide();
-                            }
-                            else if (this.gridAd.destroy) {
-                                this.gridAd.destroy();
-                            }
-                        }
-                        else {
-                            this.HideBanner();
-                        }
-                    }
-                }
-                else {
-                    this.HideBanner();
-                }
-            }
-        }
-        static CreateInterstitial() {
-            if (Laya.Browser.onWeiXin) {
-                if (interstitialId == "") {
-                    console.warn("插屏广告ID未设置！请检查！");
-                    return;
-                }
-                if (wx.createInterstitialAd) {
-                    if (this.interstitialAd == null) {
-                        this.interstitialAd = wx.createInterstitialAd({
-                            adUnitId: interstitialId,
-                        });
-                    }
-                    else
-                        return;
-                    this.interstitialAd.onError((err) => {
-                        console.log("interstitial 加载失败", err);
-                        this.ClearInterstitial();
-                    });
-                    this.interstitialAd.onLoad((err) => {
-                        console.log("interstitial 加载成功", err);
-                    });
-                }
-            }
-        }
-        static ClearInterstitial() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.interstitialAd != null) {
-                    if (this.interstitialAd.destroy)
-                        this.interstitialAd.destroy();
-                    this.interstitialAd = null;
-                }
-            }
-        }
-        static ShowInterstitial() {
-            if (Laya.Browser.onWeiXin) {
-                if (this.interstitialAd != null) {
-                    if (this.interstitialAd.show)
-                        this.interstitialAd.show();
-                }
-                else {
-                    this.CreateInterstitial();
-                }
-            }
-        }
-        static Shake(isShort = true) {
-            if (Laya.Browser.onWeiXin) {
-                if (isShort) {
-                    wx.vibrateShort({});
-                }
-                else {
-                    wx.vibrateLong({});
-                }
-            }
-        }
-        static PlayerSound(url) {
-            if (this.isMute)
-                return;
-            if (this.isSoundMute)
-                return;
-            if (Laya.Browser.onWeiXin) {
-                this.audioIndex++;
-                if (this.audioIndex >= 5) {
-                    this.audioIndex = 0;
-                }
-                switch (this.audioIndex) {
-                    case 0:
-                        if (this.wxAudio1 == null) {
-                            this.wxAudio1 = wx.createInnerAudioContext();
-                        }
-                        this.wxAudio1.src = url;
-                        this.wxAudio1.play();
-                        break;
-                    case 1:
-                        if (this.wxAudio2 == null) {
-                            this.wxAudio2 = wx.createInnerAudioContext();
-                        }
-                        this.wxAudio2.src = url;
-                        this.wxAudio2.play();
-                        break;
-                    case 2:
-                        if (this.wxAudio3 == null) {
-                            this.wxAudio3 = wx.createInnerAudioContext();
-                        }
-                        this.wxAudio3.src = url;
-                        this.wxAudio3.play();
-                        break;
-                    case 3:
-                        if (this.wxAudio4 == null) {
-                            this.wxAudio4 = wx.createInnerAudioContext();
-                        }
-                        this.wxAudio4.src = url;
-                        this.wxAudio4.play();
-                        break;
-                    case 4:
-                        if (this.wxAudio5 == null) {
-                            this.wxAudio5 = wx.createInnerAudioContext();
-                        }
-                        this.wxAudio5.src = url;
-                        this.wxAudio5.play();
-                        break;
-                }
-            }
-            else {
-                Laya.SoundManager.playSound(url);
-            }
-        }
-        static PlayBGM(url, isLoop = true) {
-            if (Laya.Browser.onWeiXin) {
-                if (this.wxBGMAudio == null) {
-                    this.wxBGMAudio = wx.createInnerAudioContext();
-                    console.log(this.wxBGMAudio, "play bgm");
-                }
-                this.wxBGMAudio.src = url;
-                this.wxBGMAudio.loop = isLoop;
-                this.wxBGMAudio.play();
-            }
-            else {
-                Laya.SoundManager.playMusic(url);
-            }
-        }
-        static BGM_Stop() {
-            if (Laya.Browser.onWeiXin) {
-                console.log(this.wxBGMAudio, " this.wxBGMAudio");
-                this.wxBGMAudio.stop();
-                console.log("stop bgm");
-            }
-            else {
-                Laya.SoundManager.stopMusic();
-            }
-        }
-        static BGM_PLAY(url, isLoop = true) {
-            if (Laya.Browser.onWeiXin) {
-                if (this.wxBGMAudio == null) {
-                    this.wxBGMAudio = wx.createInnerAudioContext();
-                    console.log(this.wxBGMAudio, "play bgm");
-                    this.wxBGMAudio.src = url;
-                    this.wxBGMAudio.loop = isLoop;
-                    this.wxBGMAudio.play();
-                }
-                else {
-                    this.wxBGMAudio.src = url;
-                    this.wxBGMAudio.loop = isLoop;
-                    this.wxBGMAudio.play();
-                }
-            }
-        }
-        static LoadFont(url) {
-            if (Laya.Browser.onWeiXin) {
-                if (wx.loadFont) {
-                    var font = wx.loadFont(url);
-                }
-            }
-            else {
-                Laya.loader.load(url, Laya.Handler.create(this, (fontRes) => {
-                    console.log("*************", fontRes);
-                }), null, Laya.Loader.TTF);
-            }
-        }
-    }
-    WeChatManager.openDataContext = null;
-    WeChatManager.userInfo = null;
-    WeChatManager.gameListData = null;
-    WeChatManager.maxIndex = 0;
-    WeChatManager.indexQR = 0;
-    WeChatManager.rewardAd = null;
-    WeChatManager.isHasAd = false;
-    WeChatManager.bannerAd = null;
-    WeChatManager.interstitialAd = null;
-    WeChatManager.gridAd = null;
-    WeChatManager.wxAudio1 = null;
-    WeChatManager.wxAudio2 = null;
-    WeChatManager.wxAudio3 = null;
-    WeChatManager.wxAudio4 = null;
-    WeChatManager.wxAudio5 = null;
-    WeChatManager.wxBGMAudio = null;
-    WeChatManager.isSoundMute = false;
-    WeChatManager.isBGMMute = false;
-    WeChatManager.isMute = false;
-    WeChatManager.reword_index = "";
-    WeChatManager.share_index = "";
-    WeChatManager.audioIndex = 0;
-    WeChatManager.loadGrid = false;
-    WeChatManager.miniGameIndex = 0;
-    WeChatManager.isFirstShare = true;
-    WeChatManager.shareWords = ["精彩又刺激的铲树皮，我知道你玩的很6！", "伐木达人在线削木头，自称“光头强”？不简单", "李老板在线砍木头，这么奇怪的花纹都能弄出来！", "这是什么铲子？铲出来的树皮竟然是大大卷！！"];
-    WeChatManager.callBack_Success = null;
-    WeChatManager.callBack_Fail = null;
-
-    class LoadingPage extends Laya.Script {
-        constructor() {
-            super(...arguments);
-            this._isSubload = false;
-            this._enterGame = false;
-        }
-        onAwake() {
-            this.uiBox = this.owner.getChildAt(0);
-            this.progress = this.uiBox.getChildByName("ProgressBar");
-        }
-        onStart() {
-            console.log("onStart");
-            this.progress.value = 0;
-            this.loadSubPackages();
-        }
-        onUpdate() {
-            if (Laya.timer.delta > 100)
-                return;
-            if (this._enterGame)
-                return;
-            if (this.progress.value <= 0.9) {
-                this.progress.value += Laya.timer.delta / 1000 * 0.3;
-            }
-            else {
-                if (this._isSubload) {
-                    this.progress.value += Laya.timer.delta / 1000 * 0.1;
-                }
-                if (this.progress.value >= 1) {
-                    this.enterGame();
-                }
-            }
-        }
-        loadSubPackages() {
-            let p1 = new Promise(reslove => {
-                WeChatManager.LoadSubpackage("sub1", () => {
-                    reslove();
-                });
-            });
-            let p2 = new Promise(reslove => {
-                WeChatManager.LoadSubpackage("sub2", () => {
-                    reslove();
-                });
-            });
-            Promise.all([p1, p2]).then(() => {
-                if (!this._isSubload) {
-                    Laya.Scene.open("Scenes/Game.scene", false);
-                    this._isSubload = true;
-                }
-            });
-        }
-        enterGame() {
-            if (!this._enterGame) {
-                console.log("enter game!");
-                Laya.Scene.close("Scenes/Start.scene");
-                this._enterGame = true;
-            }
-        }
-    }
-
-    class GameConfig {
-        constructor() {
-        }
-        static init() {
-            var reg = Laya.ClassUtils.regClass;
-            reg("script/Pages/GamePage.ts", GamePage);
-            reg("script/UI/Home.ts", Home);
-            reg("script/Pages/LoadingPage.ts", LoadingPage);
-        }
-    }
-    GameConfig.width = 750;
-    GameConfig.height = 1334;
-    GameConfig.scaleMode = "fixedwidth";
-    GameConfig.screenMode = "none";
-    GameConfig.alignV = "top";
-    GameConfig.alignH = "center";
-    GameConfig.startScene = "Scenes/Start.scene";
-    GameConfig.sceneRoot = "";
-    GameConfig.debug = false;
-    GameConfig.stat = true;
-    GameConfig.physicsDebug = false;
-    GameConfig.exportSceneToJson = true;
-    GameConfig.init();
-
     var Quaternion$2 = Laya.Quaternion;
     var Quaternion$3 = (function () {
         Quaternion$2.prototype.vmult = function (v, target) {
@@ -3364,7 +2879,7 @@
         };
     })();
 
-    var Vector3$5 = (function () {
+    var Vector3$3 = (function () {
         Laya.Vector3.prototype.vsub = function (v, target) {
             var target = target || new Laya.Vector3();
             Laya.Vector3.subtract(this, v, target);
@@ -3615,56 +3130,56 @@
         Laya.Vector3.left = new Laya.Vector3(1, 0, 0);
     })();
 
-    var Vector2$1 = Laya.Vector2;
-    var zero = new Vector2$1();
-    var Vector2$2 = (function () {
-        Vector2$1.prototype.vsub = function (v, target) {
+    var Vector2 = Laya.Vector2;
+    var zero = new Vector2();
+    var Vector2$1 = (function () {
+        Vector2.prototype.vsub = function (v, target) {
             var self = this;
             var target = target || new Laya.Vector2();
             target.x = self.x - v.x;
             target.y = self.y - v.y;
             return target;
         };
-        Vector2$1.prototype.vadd = function (v, target) {
+        Vector2.prototype.vadd = function (v, target) {
             var self = this;
             var target = target || new Laya.Vector2();
             target.x = self.x + v.x;
             target.y = self.y + v.y;
             return target;
         };
-        Vector2$1.prototype.mult = function (n, target) {
-            var target = target || new Vector2$1();
+        Vector2.prototype.mult = function (n, target) {
+            var target = target || new Vector2();
             target.x = this.x * n;
             target.y = this.y * n;
             return target;
         };
-        Vector2$1.prototype.divide = function (n, target) {
-            var target = target || new Vector2$1();
+        Vector2.prototype.divide = function (n, target) {
+            var target = target || new Vector2();
             target.x = this.x / n;
             target.y = this.y / n;
             return target;
         };
-        Vector2$1.prototype.dot = function (v) {
+        Vector2.prototype.dot = function (v) {
             return this.x * v.x + this.y * v.y;
         };
-        Vector2$1.prototype.lerp = function (a, t, target) {
+        Vector2.prototype.lerp = function (a, t, target) {
             t = Mathf.Clamp01(t);
             var target = target || new Laya.Vector2();
             target.x = this.x + ((a.x - this.x) * t);
             target.y = this.y + ((a.y - this.y) * t);
             return target;
         };
-        Vector2$1.prototype.lerpUnclamped = function (a, t, target) {
+        Vector2.prototype.lerpUnclamped = function (a, t, target) {
             var target = target || new Laya.Vector2();
             target.x = this.x + ((a.x - this.x) * t);
             target.y = this.y + ((a.y - this.y) * t);
             return target;
         };
-        Vector2$1.prototype.magnitude = function () {
+        Vector2.prototype.magnitude = function () {
             return Mathf.Sqrt((this.x * this.x) + (this.y * this.y));
         };
-        Vector2$1.moveTowards = function (current, target, maxDistanceDelta, out) {
-            var out = out || new Vector2$1();
+        Vector2.moveTowards = function (current, target, maxDistanceDelta, out) {
+            var out = out || new Vector2();
             var vector = target.vsub(current);
             var magnitude = vector.magnitude();
             if (magnitude <= maxDistanceDelta || magnitude == 0)
@@ -3674,7 +3189,7 @@
             }
             return out;
         };
-        Vector2$1.prototype.normalize = function () {
+        Vector2.prototype.normalize = function () {
             let magnitude = this.magnitude();
             if (magnitude <= 1E-05)
                 this.set(0, 0);
@@ -3682,45 +3197,45 @@
                 this.divide(magnitude, this);
             return this;
         };
-        Vector2$1.prototype.magnitudeSquared = function () {
+        Vector2.prototype.magnitudeSquared = function () {
             return this.dot(this);
         };
-        Vector2$1.prototype.unit = Vector2$1.prototype.normalize;
-        Vector2$1.prototype.distanceTo = function (p) {
+        Vector2.prototype.unit = Vector2.prototype.normalize;
+        Vector2.prototype.distanceTo = function (p) {
             var x = this.x, y = this.y;
             var px = p.x, py = p.y;
             return Math.sqrt((px - x) * (px - x) + (py - y) * (py - y));
         };
-        Vector2$1.prototype.distanceSquared = function (p) {
+        Vector2.prototype.distanceSquared = function (p) {
             var x = this.x, y = this.y;
             var px = p.x, py = p.y;
             return (px - x) * (px - x) + (py - y) * (py - y);
         };
-        Vector2$1.prototype.negate = function (target) {
+        Vector2.prototype.negate = function (target) {
             target = target || new Laya.Vector2();
             target.x = -this.x;
             target.y = -this.y;
             return target;
         };
-        Vector2$1.prototype.copy = function (v) {
+        Vector2.prototype.copy = function (v) {
             this.x = v.x;
             this.y = v.y;
             return this;
         };
-        Vector2$1.prototype.set = function (newX, newY) {
+        Vector2.prototype.set = function (newX, newY) {
             this.x = newX;
             this.y = newY;
         };
-        Vector2$1.prototype.toArray = function () {
+        Vector2.prototype.toArray = function () {
             return [this.x, this.y];
         };
-        Vector2$1.prototype.fromArray = function (arr) {
+        Vector2.prototype.fromArray = function (arr) {
             this.x = arr[0];
             this.y = arr[1];
             this.z = arr[2];
             return this;
         };
-        Vector2$1.prototype.almostEquals = function (v, precision) {
+        Vector2.prototype.almostEquals = function (v, precision) {
             if (precision === undefined) {
                 precision = 1e-6;
             }
@@ -3729,41 +3244,41 @@
             }
             return true;
         };
-        Vector2$1.prototype.isZero = function () {
+        Vector2.prototype.isZero = function () {
             return this.x === 0 && this.y === 0;
         };
-        Vector2$1.prototype.min = function (v) {
+        Vector2.prototype.min = function (v) {
             this.x = Mathf.Min(this.x, v.x);
             this.y = Mathf.Min(this.y, v.y);
             return this;
         };
-        Vector2$1.prototype.max = function (v) {
+        Vector2.prototype.max = function (v) {
             this.x = Mathf.Max(this.x, v.x);
             this.y = Mathf.Max(this.y, v.y);
             return this;
         };
-        Vector2$1.angle = function (from, to) {
+        Vector2.angle = function (from, to) {
             var num = Mathf.Sqrt(from.magnitudeSquared() * to.magnitudeSquared());
             return num >= 1E-15 ? Mathf.Acos(Mathf.Clamp(from.dot(to) / num, -1, 1)) * 57.29578 : 0;
         };
-        Vector2$1.signedAngle = function (from, to) {
-            return Vector2$1.angle(from, to) * Mathf.Sign(from.x * to.y - from.y * to.x);
+        Vector2.signedAngle = function (from, to) {
+            return Vector2.angle(from, to) * Mathf.Sign(from.x * to.y - from.y * to.x);
         };
-        Vector2$1.reflect = function (inDirection, inNormal, target) {
-            var target = target || new Vector2$1();
+        Vector2.reflect = function (inDirection, inNormal, target) {
+            var target = target || new Vector2();
             inNormal.mult(inNormal.dot(inDirection) * -2, target);
             target.vadd(inDirection, target);
             return target;
         };
-        Vector2$1.prototype.toString = function () {
+        Vector2.prototype.toString = function () {
             return 'Vector2: ' + this.x + ", " + this.y;
         };
-        Vector2$1.zero = new Vector2$1();
-        Vector2$1.one = new Vector2$1(1, 1);
-        Vector2$1.up = new Vector2$1(0, 1);
-        Vector2$1.down = new Vector2$1(0, -1);
-        Vector2$1.right = new Vector2$1(1, 0);
-        Vector2$1.left = new Vector2$1(-1, 0);
+        Vector2.zero = new Vector2();
+        Vector2.one = new Vector2(1, 1);
+        Vector2.up = new Vector2(0, 1);
+        Vector2.down = new Vector2(0, -1);
+        Vector2.right = new Vector2(1, 0);
+        Vector2.left = new Vector2(-1, 0);
     })();
 
     function traverse(node, callback) {
@@ -3879,12 +3394,12 @@
         };
     })();
 
-    var Vector3$6 = Laya.Vector3;
+    var Vector3$4 = Laya.Vector3;
     var Vector4 = Laya.Vector4;
     var Color = (function () {
         Laya.Color.prototype.toVector3 = function (target) {
             let self = this;
-            target = target || new Vector3$6();
+            target = target || new Vector3$4();
             target.x = self.r;
             target.y = self.g;
             target.z = self.b;
@@ -3946,15 +3461,15 @@
     })();
 
     var Matrix4x4 = Laya.Matrix4x4;
-    var Vector3$7 = Laya.Vector3;
+    var Vector3$5 = Laya.Vector3;
     var Matrix4x4$1 = (function () {
-        var _v1 = new Vector3$7();
+        var _v1 = new Vector3$5();
         var _m1 = new Laya.Matrix4x4();
-        var _zero = new Vector3$7(0, 0, 0);
-        var _one = new Vector3$7(1, 1, 1);
-        var _x = new Vector3$7();
-        var _y = new Vector3$7();
-        var _z = new Vector3$7();
+        var _zero = new Vector3$5(0, 0, 0);
+        var _one = new Vector3$5(1, 1, 1);
+        var _x = new Vector3$5();
+        var _y = new Vector3$5();
+        var _z = new Vector3$5();
         Matrix4x4.prototype.set = function (n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44) {
             var self = this;
             var te = self.elements;

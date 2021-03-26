@@ -5,7 +5,7 @@ export enum UITYpes {
     TUTORIAL
 }
 
-export  class PanelBase extends Laya.Script {
+export   class PanelBase extends Laya.Script {
     public  type: UITYpes = UITYpes.PANEL;
     public isVisible: boolean = false;
     public onShowEnd: Function = null;
