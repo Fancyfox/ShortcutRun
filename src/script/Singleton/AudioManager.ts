@@ -35,7 +35,6 @@ export default class AudioManager {
         } else {
             this._generateAudio();
         }
-        console.log("loadFromCache");
         
     }
 
@@ -90,8 +89,6 @@ export default class AudioManager {
     public playEffect(name: string) {
         if (this.audioInfo && !this.audioInfo.effectMute) {
             const path = `subPackage/sub2/Audio/Effect/${name}.mp3`;
-            console.log(path,"path");
-            
             Laya.SoundManager.playSound(path);
         }
 

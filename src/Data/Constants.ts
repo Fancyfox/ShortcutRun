@@ -5,7 +5,9 @@ export class Constants {
     public static UIPage = {
         home: "Home",
         playing: "Playing",
-        relife: "Relife"
+        relife: "Relife",
+        result: "Result",
+        loading: "Loading"
 
     }
 
@@ -13,6 +15,7 @@ export class Constants {
     public static GameConfigID = 'SHORTCOU_RUN';
     public static LevelTick = 'level_tick';
     public static AudioConfigID = 'audioConfigID';
+    public static PlayerInfoID = 'playerInfoID';
 
 
 

@@ -4,6 +4,13 @@
 		"type":"Scene3D",
 		"props":{
 			"name":"main",
+			"sky":{
+				"material":{
+					"type":"Laya.SkyBoxMaterial",
+					"path":"Assets/Materialss/SkyMat.lmat"
+				},
+				"mesh":"SkyBox"
+			},
 			"ambientColor":[
 				0.212,
 				0.227,

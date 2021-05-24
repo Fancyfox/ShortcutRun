@@ -2,7 +2,7 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"Sprite3D",
-		"instanceID":2,
+		"instanceID":0,
 		"props":{
 			"name":"character_base",
 			"active":true,
@@ -84,7 +84,7 @@
 		"child":[
 			{
 				"type":"Sprite3D",
-				"instanceID":3,
+				"instanceID":1,
 				"props":{
 					"name":"character_base (2)",
 					"active":true,
@@ -111,7 +111,7 @@
 				"child":[
 					{
 						"type":"Sprite3D",
-						"instanceID":4,
+						"instanceID":2,
 						"props":{
 							"name":"character_base",
 							"active":true,
@@ -138,7 +138,7 @@
 						"child":[
 							{
 								"type":"Sprite3D",
-								"instanceID":5,
+								"instanceID":3,
 								"props":{
 									"name":"mixamorig:Hips",
 									"active":true,
@@ -165,7 +165,7 @@
 								"child":[
 									{
 										"type":"Sprite3D",
-										"instanceID":6,
+										"instanceID":4,
 										"props":{
 											"name":"mixamorig:LeftUpLeg",
 											"active":true,
@@ -192,7 +192,7 @@
 										"child":[
 											{
 												"type":"Sprite3D",
-												"instanceID":7,
+												"instanceID":5,
 												"props":{
 													"name":"mixamorig:LeftLeg",
 													"active":true,
@@ -219,7 +219,7 @@
 												"child":[
 													{
 														"type":"Sprite3D",
-														"instanceID":8,
+														"instanceID":6,
 														"props":{
 															"name":"mixamorig:LeftFoot",
 															"active":true,
@@ -246,7 +246,7 @@
 														"child":[
 															{
 																"type":"Sprite3D",
-																"instanceID":9,
+																"instanceID":7,
 																"props":{
 																	"name":"mixamorig:LeftToeBase",
 																	"active":true,
@@ -280,7 +280,7 @@
 									},
 									{
 										"type":"Sprite3D",
-										"instanceID":10,
+										"instanceID":8,
 										"props":{
 											"name":"mixamorig:RightUpLeg",
 											"active":true,
@@ -307,7 +307,7 @@
 										"child":[
 											{
 												"type":"Sprite3D",
-												"instanceID":11,
+												"instanceID":9,
 												"props":{
 													"name":"mixamorig:RightLeg",
 													"active":true,
@@ -334,7 +334,7 @@
 												"child":[
 													{
 														"type":"Sprite3D",
-														"instanceID":12,
+														"instanceID":10,
 														"props":{
 															"name":"mixamorig:RightFoot",
 															"active":true,
@@ -361,7 +361,7 @@
 														"child":[
 															{
 																"type":"Sprite3D",
-																"instanceID":13,
+																"instanceID":11,
 																"props":{
 																	"name":"mixamorig:RightToeBase",
 																	"active":true,
@@ -395,7 +395,7 @@
 									},
 									{
 										"type":"Sprite3D",
-										"instanceID":14,
+										"instanceID":12,
 										"props":{
 											"name":"mixamorig:Spine",
 											"active":true,
@@ -422,7 +422,7 @@
 										"child":[
 											{
 												"type":"Sprite3D",
-												"instanceID":15,
+												"instanceID":13,
 												"props":{
 													"name":"mixamorig:Spine1",
 													"active":true,
@@ -449,7 +449,7 @@
 												"child":[
 													{
 														"type":"Sprite3D",
-														"instanceID":16,
+														"instanceID":14,
 														"props":{
 															"name":"mixamorig:Spine2",
 															"active":true,
@@ -476,7 +476,7 @@
 														"child":[
 															{
 																"type":"Sprite3D",
-																"instanceID":17,
+																"instanceID":15,
 																"props":{
 																	"name":"mixamorig:LeftShoulder",
 																	"active":true,
@@ -503,7 +503,7 @@
 																"child":[
 																	{
 																		"type":"Sprite3D",
-																		"instanceID":18,
+																		"instanceID":16,
 																		"props":{
 																			"name":"mixamorig:LeftArm",
 																			"active":true,
@@ -530,7 +530,7 @@
 																		"child":[
 																			{
 																				"type":"Sprite3D",
-																				"instanceID":19,
+																				"instanceID":17,
 																				"props":{
 																					"name":"mixamorig:LeftForeArm",
 																					"active":true,
@@ -557,7 +557,7 @@
 																				"child":[
 																					{
 																						"type":"Sprite3D",
-																						"instanceID":20,
+																						"instanceID":18,
 																						"props":{
 																							"name":"mixamorig:LeftHand",
 																							"active":true,
@@ -584,7 +584,7 @@
 																						"child":[
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":21,
+																								"instanceID":19,
 																								"props":{
 																									"name":"mixamorig:LeftHandIndex1",
 																									"active":true,
@@ -611,7 +611,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":22,
+																										"instanceID":20,
 																										"props":{
 																											"name":"mixamorig:LeftHandIndex2",
 																											"active":true,
@@ -638,7 +638,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":23,
+																												"instanceID":21,
 																												"props":{
 																													"name":"mixamorig:LeftHandIndex3",
 																													"active":true,
@@ -670,7 +670,7 @@
 																							},
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":24,
+																								"instanceID":22,
 																								"props":{
 																									"name":"mixamorig:LeftHandPinky1",
 																									"active":true,
@@ -697,7 +697,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":25,
+																										"instanceID":23,
 																										"props":{
 																											"name":"mixamorig:LeftHandPinky2",
 																											"active":true,
@@ -724,7 +724,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":26,
+																												"instanceID":24,
 																												"props":{
 																													"name":"mixamorig:LeftHandPinky3",
 																													"active":true,
@@ -756,7 +756,7 @@
 																							},
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":27,
+																								"instanceID":25,
 																								"props":{
 																									"name":"mixamorig:LeftHandThumb1",
 																									"active":true,
@@ -783,7 +783,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":28,
+																										"instanceID":26,
 																										"props":{
 																											"name":"mixamorig:LeftHandThumb2",
 																											"active":true,
@@ -810,7 +810,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":29,
+																												"instanceID":27,
 																												"props":{
 																													"name":"mixamorig:LeftHandThumb3",
 																													"active":true,
@@ -850,7 +850,7 @@
 															},
 															{
 																"type":"Sprite3D",
-																"instanceID":30,
+																"instanceID":28,
 																"props":{
 																	"name":"mixamorig:Neck",
 																	"active":true,
@@ -877,7 +877,7 @@
 																"child":[
 																	{
 																		"type":"Sprite3D",
-																		"instanceID":31,
+																		"instanceID":29,
 																		"props":{
 																			"name":"mixamorig:Head",
 																			"active":true,
@@ -904,7 +904,7 @@
 																		"child":[
 																			{
 																				"type":"Sprite3D",
-																				"instanceID":32,
+																				"instanceID":30,
 																				"props":{
 																					"name":"mixamorig:Head_end",
 																					"active":true,
@@ -936,7 +936,7 @@
 															},
 															{
 																"type":"Sprite3D",
-																"instanceID":33,
+																"instanceID":31,
 																"props":{
 																	"name":"mixamorig:RightShoulder",
 																	"active":true,
@@ -963,7 +963,7 @@
 																"child":[
 																	{
 																		"type":"Sprite3D",
-																		"instanceID":34,
+																		"instanceID":32,
 																		"props":{
 																			"name":"mixamorig:RightArm",
 																			"active":true,
@@ -990,7 +990,7 @@
 																		"child":[
 																			{
 																				"type":"Sprite3D",
-																				"instanceID":35,
+																				"instanceID":33,
 																				"props":{
 																					"name":"mixamorig:RightForeArm",
 																					"active":true,
@@ -1017,7 +1017,7 @@
 																				"child":[
 																					{
 																						"type":"Sprite3D",
-																						"instanceID":36,
+																						"instanceID":34,
 																						"props":{
 																							"name":"mixamorig:RightHand",
 																							"active":true,
@@ -1044,7 +1044,7 @@
 																						"child":[
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":37,
+																								"instanceID":35,
 																								"props":{
 																									"name":"mixamorig:RightHandIndex1",
 																									"active":true,
@@ -1071,7 +1071,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":38,
+																										"instanceID":36,
 																										"props":{
 																											"name":"mixamorig:RightHandIndex2",
 																											"active":true,
@@ -1098,7 +1098,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":39,
+																												"instanceID":37,
 																												"props":{
 																													"name":"mixamorig:RightHandIndex3",
 																													"active":true,
@@ -1130,7 +1130,7 @@
 																							},
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":40,
+																								"instanceID":38,
 																								"props":{
 																									"name":"mixamorig:RightHandPinky1",
 																									"active":true,
@@ -1157,7 +1157,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":41,
+																										"instanceID":39,
 																										"props":{
 																											"name":"mixamorig:RightHandPinky2",
 																											"active":true,
@@ -1184,7 +1184,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":42,
+																												"instanceID":40,
 																												"props":{
 																													"name":"mixamorig:RightHandPinky3",
 																													"active":true,
@@ -1216,7 +1216,7 @@
 																							},
 																							{
 																								"type":"Sprite3D",
-																								"instanceID":43,
+																								"instanceID":41,
 																								"props":{
 																									"name":"mixamorig:RightHandThumb1",
 																									"active":true,
@@ -1243,7 +1243,7 @@
 																								"child":[
 																									{
 																										"type":"Sprite3D",
-																										"instanceID":44,
+																										"instanceID":42,
 																										"props":{
 																											"name":"mixamorig:RightHandThumb2",
 																											"active":true,
@@ -1270,7 +1270,7 @@
 																										"child":[
 																											{
 																												"type":"Sprite3D",
-																												"instanceID":45,
+																												"instanceID":43,
 																												"props":{
 																													"name":"mixamorig:RightHandThumb3",
 																													"active":true,
@@ -1320,7 +1320,7 @@
 					},
 					{
 						"type":"SkinnedMeshSprite3D",
-						"instanceID":46,
+						"instanceID":44,
 						"props":{
 							"name":"player_base",
 							"active":true,
@@ -1342,7 +1342,7 @@
 								100,
 								100
 							],
-							"rootBone":5,
+							"rootBone":3,
 							"boundBox":{
 								"min":[
 									-0.004432902,
@@ -1364,47 +1364,47 @@
 								"radius":0.0119431
 							},
 							"bones":[
-								5,
+								3,
+								12,
+								13,
 								14,
-								15,
-								16,
-								30,
-								31,
-								32,
-								17,
-								18,
-								19,
-								20,
-								27,
 								28,
 								29,
+								30,
+								15,
+								16,
+								17,
+								18,
+								25,
+								26,
+								27,
+								19,
+								20,
 								21,
 								22,
 								23,
 								24,
-								25,
-								26,
+								31,
+								32,
 								33,
 								34,
-								35,
-								36,
-								40,
-								41,
-								42,
-								37,
 								38,
 								39,
+								40,
+								35,
+								36,
+								37,
+								41,
+								42,
 								43,
-								44,
-								45,
+								4,
+								5,
 								6,
 								7,
 								8,
 								9,
 								10,
-								11,
-								12,
-								13
+								11
 							],
 							"materials":[
 								{
@@ -1420,7 +1420,7 @@
 			},
 			{
 				"type":"Sprite3D",
-				"instanceID":47,
+				"instanceID":45,
 				"props":{
 					"name":"plank_point",
 					"active":true,
@@ -1428,8 +1428,8 @@
 					"layer":0,
 					"position":[
 						-0.007692308,
-						0.6961539,
-						0.2384615
+						0.7761539,
+						0.2992308
 					],
 					"rotation":[
 						0,
@@ -1448,7 +1448,7 @@
 			},
 			{
 				"type":"Sprite3D",
-				"instanceID":48,
+				"instanceID":46,
 				"props":{
 					"name":"point",
 					"active":true,

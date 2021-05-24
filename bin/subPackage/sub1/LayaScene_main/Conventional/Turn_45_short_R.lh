@@ -2,7 +2,7 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"MeshSprite3D",
-		"instanceID":53,
+		"instanceID":49,
 		"props":{
 			"name":"Turn_45_short_R",
 			"active":true,
@@ -14,10 +14,10 @@
 				0
 			],
 			"rotation":[
+				-0.7071068,
 				0,
 				0,
-				0,
-				-1
+				-0.7071068
 			],
 			"scale":[
 				1,
@@ -47,6 +47,35 @@
 				"isTrigger":false
 			}
 		],
-		"child":[]
+		"child":[
+			{
+				"type":"Sprite3D",
+				"instanceID":50,
+				"props":{
+					"name":"target",
+					"active":true,
+					"isStatic":false,
+					"layer":0,
+					"position":[
+						1.870007,
+						5.100001,
+						-4.768372E-07
+					],
+					"rotation":[
+						0,
+						0,
+						0,
+						-1
+					],
+					"scale":[
+						1,
+						1,
+						1
+					]
+				},
+				"components":[],
+				"child":[]
+			}
+		]
 	}
 }

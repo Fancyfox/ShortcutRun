@@ -1,9 +1,12 @@
+import { Constants } from "../../Data/Constants";
+import Arrival from "../../Entity/Arrival";
 import Camera from "../../Entity/Camera";
 import Enemy from "../../Entity/Enemy";
 import Obj from "../../Entity/Obj";
 import Player from "../../Entity/Player";
 import Water from "../../Entity/Water";
 import Box3 from "../Extensions/Box3";
+import GamePage from "../Pages/GamePage";
 import AudioManager from "./AudioManager";
 import CannonManager from "./CannonManager";
 import EffectUtil from "./EffectUtil";
@@ -32,11 +35,14 @@ export default class GameManager {
     public mapBox: Box3 = new Box3();
     /**地形模型 */
     public map: Laya.Sprite3D;
+    public road_mat: Laya.BlinnPhongMaterial;
+    public sky_mat: Laya.SkyBoxMaterial;
     /**当前关卡数据 */
     public data: any;
     public entitys = {};
 
     public isGameReady: boolean = false
+
 
 
     /**
@@ -48,11 +54,15 @@ export default class GameManager {
     }
 
     public loadLevel(level: number) {
-        return new Promise(resolve => {
+        GameData.name_array = GameData.RandomName();
+        return new Promise<void>(resolve => {
             Promise.all([
                 this.loadScene3D(GameDefine.scenePath),
                 this.loadConfig(level),
                 this.loadSounds(),
+                this.loadRoadTextures(),
+
+
 
             ]).then(ret => {
                 this.data = ret[1];
@@ -70,9 +80,50 @@ export default class GameManager {
                 console.log(Laya.stage, "root");
                 GameData.scene3d = this.scene_3d;
                 GameData.map = this.map;
+                if (this.road_mat) {
+                    let index = (level - 1) % 7;
+                    if (GameData.roadTex_map.has(index.toString()))
+                        this.road_mat.albedoTexture = GameData.roadTex_map.get(index.toString());
+                }
+                // this.loadSkyMat().then(() => {
+                //     this.loadSkyCube().then(() => {
+                //         this.camera.skyRenderer.material = this.sky_mat;
+                //         this.camera.enableRender = true;
+                //         this.scene_3d.skyRenderer.material = this.sky_mat;
+                //         console.log(this.camera.skyRenderer, "this.camera.skyRenderer");
+                //         console.log(this.scene_3d.skyRenderer, "this.scene_3d.skyRenderer");
+
+                //     })
+                // });
                 // CannonManager.instance.enableCannonWorld();
             }).then(() => {
-                this.init().then(resolve);
+                this.init().then(() => {
+                    this.isGameReady = true;
+                    console.log("game ready");
+                    resolve();
+                });
+            })
+        })
+    }
+
+    /**加载皮肤贴图 */
+    private loadRoadTextures() {
+        return new Promise<void>(resolve => {
+            let arr = [];
+            for (let i = 0; i < 7; i++) {
+                arr.push(new Promise<void>(resolve2 => {
+                    Laya.Texture2D.load(GameDefine.roadTexPath + i + ".png", Handler.create(null, (tex: Laya.Texture2D) => {
+                        if (!GameData.roadTex_map.has(i.toString())) {
+                            GameData.roadTex_map.set(i.toString(), tex)
+                        }
+                        resolve2();
+                    }))
+                }));
+            }
+            Promise.all(arr).then(() => {
+                Laya.timer.frameOnce(1, null, () => {
+                    resolve();
+                });
             })
         })
     }
@@ -137,7 +188,7 @@ export default class GameManager {
 * 场景和配置加载完成之后生成地面等
 */
     private init() {
-        return new Promise(resolve => {
+        return new Promise<void>(resolve => {
             // 生成模型
             this.mapBox.makeEmpty();
 
@@ -153,7 +204,7 @@ export default class GameManager {
                     // 预编译Shader
                     this.compileShaders();
                     this.onGameReady();
-
+                    resolve()
                 });
 
 
@@ -217,6 +268,9 @@ export default class GameManager {
                 arr.push(new Promise<void>(resolve2 => {
                     Laya.Sprite3D.load(GameDefine.prefabRoot + name, Handler.create(null, (sp: Laya.Sprite3D) => {
                         this.scene_3d.addChild(sp);
+                        if (name == "Turn_45_L.lh") {
+                            this.setRoadMat(sp);
+                        }
                         sp.transform.position = new Laya.Vector3(0, 0, 0);
                         Laya.timer.frameOnce(1, null, a1 => {
                             this.scene_3d.removeChild(a1);
@@ -229,6 +283,11 @@ export default class GameManager {
                 Laya.timer.frameOnce(1, null, resolve);
             })
         })
+    }
+
+    private setRoadMat(sp: Laya.Sprite3D) {
+        let road = sp as Laya.MeshSprite3D;
+        this.road_mat = road.meshRenderer.sharedMaterial as Laya.BlinnPhongMaterial;
     }
 
     /**
@@ -265,6 +324,9 @@ export default class GameManager {
                 ins = clone.addComponent(Enemy);
                 ins.initScene3d(this.scene_3d);
                 break;
+            case "arrival":
+                ins = clone.addComponent(Arrival);
+                break;
             default:
                 ins = clone.addComponent(Obj);
                 break;
@@ -273,6 +335,31 @@ export default class GameManager {
         this.entitys[d.id] = ins;
 
         return ins;
+    }
+
+    /**
+    * 加载天空盒子材质
+    */
+    private loadSkyMat() {
+        let scr = GameDefine.prefabRoot + 'Assets/Materialss/SkyMat.lmat';
+        return new Promise<void>(resolve => {
+            Laya.SkyBoxMaterial.load(scr, Laya.Handler.create(null, (m: Laya.SkyBoxMaterial) => {
+                //GameData.scene3d.skyRenderer.material = m;
+                console.log("load mat success", m);
+                this.sky_mat = m;
+                resolve();
+            }));
+        });
+    }
+
+    private loadSkyCube() {
+        let scr = GameDefine.prefabRoot + 'Assets/Materialss/skyCubeMap.ltc';
+        return new Promise<void>(resolve => {
+            Laya.TextureCube.load(scr, Laya.Handler.create(null, (textC: Laya.TextureCube) => {
+                this.sky_mat.textureCube = textC;
+                resolve();
+            }));
+        });
     }
 
     /**
@@ -288,11 +375,11 @@ export default class GameManager {
         GameData.scene3d.removeSelf();
         GameData.scene3d.destroy();
         GameData.scene3d = null;
-        GameData.canRelife = true;
+        GameData.resetData();
         this.entitys = {};
         ES.instance.offAll();
         Laya.stage.offAll();
-        Laya.Resource.destroyUnusedResources();
+        //Laya.Resource.destroyUnusedResources();
         GameDefine.gameState = GameState.None;
     }
 }

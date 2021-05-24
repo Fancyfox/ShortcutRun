@@ -2,7 +2,7 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"MeshSprite3D",
-		"instanceID":50,
+		"instanceID":47,
 		"props":{
 			"name":"Turn_45_L",
 			"active":true,
@@ -47,6 +47,35 @@
 				"isTrigger":false
 			}
 		],
-		"child":[]
+		"child":[
+			{
+				"type":"Sprite3D",
+				"instanceID":48,
+				"props":{
+					"name":"target",
+					"active":true,
+					"isStatic":false,
+					"layer":0,
+					"position":[
+						4.860002,
+						11.96,
+						0
+					],
+					"rotation":[
+						0,
+						0,
+						0,
+						-1
+					],
+					"scale":[
+						1,
+						1,
+						1
+					]
+				},
+				"components":[],
+				"child":[]
+			}
+		]
 	}
 }

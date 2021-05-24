@@ -1,5 +1,8 @@
+import { CharactorManager } from "../../Data/CharactorManager";
+import { Configuration } from "../../Data/Configuration";
 import { SdkUitl } from "../../Util/SdkUitl";
 import WeChatManager from "../../Util/WeChatManager";
+import GameManager from "../Singleton/GameManager";
 
 
 const width: number = 530;
@@ -14,13 +17,13 @@ export default class LoadingPage extends Laya.Script {
 
     onAwake() {
         this.uiBox = this.owner.getChildAt(0) as Laya.Box;
-        this.progress = this.uiBox.getChildByName("progress") as Laya.Image;
+        this.progress = this.owner.getChildByName("progress") as Laya.Image;
+        this.progress.width = 1;
     }
 
     onStart() {
-        console.log("onStart");
-
-        this.progress.width = 1;
+        Configuration.instance().init();
+        CharactorManager.instance().loadFromCache();
         this.loadSubPackages();
     }
 
@@ -47,15 +50,19 @@ export default class LoadingPage extends Laya.Script {
     }
 
     private _refreshProgress() {
-        if (this.progress.width <= 0.9*width) {
+        if (this.progress.width <= 0.9 * width) {
             if (this._subTask) {
-                this.progress.width = this._subProgress * 0.9*width;
+                this.progress.width = this._subProgress * 0.9 * width;
             } else {
-                this.progress.width += Laya.timer.delta / 1000 * 0.5*width;
+                this.progress.width += Laya.timer.delta / 1000 * 0.5 * width;
             }
         } else {
             if (this._isSubload) {
-                this.progress.width += Laya.timer.delta / 1000 * 0.2*width;
+                this.progress.width += Laya.timer.delta / 1000 * 0.2 * width;
+            }
+
+            if (this.progress.width >= width) {
+                this.progress.width = width;
             }
 
             if (this.progress.width >= width) {
@@ -69,11 +76,12 @@ export default class LoadingPage extends Laya.Script {
         if (!this._isSubload) {
             Laya.Scene.open("Scenes/Game.scene", false);
             this._isSubload = true;
+            SdkUitl.loadSubpackage("sub2", null)
         }
     }
 
     private enterGame() {
-        if (!this._enterGame) {
+        if (!this._enterGame && GameManager.instance().isGameReady) {
             console.log("enter game!");
             Laya.Scene.close("Scenes/Start.scene")
             this._enterGame = true;

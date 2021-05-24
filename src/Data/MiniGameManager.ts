@@ -22,18 +22,37 @@ export class MiniGameManager {
         EventManager.dispatchEvent(EventName.MINI_GAME_START)
     }
 
-    public EndGame(){
-        GameDefine.gameState=GameState.End;
+    public EndGame() {
+        GameDefine.gameState = GameState.End;
         EventManager.dispatchEvent(EventName.MINI_GAME_END)
 
     }
 
-    public PauseGame(){
-        GameDefine.gameState=GameState.Pause; 
+    public PauseGame() {
+        GameDefine.gameState = GameState.Pause;
+        EventManager.dispatchEvent(EventName.MINI_GAME_RELIFE);
     }
 
-    public ResumeGame(){
-        GameDefine.gameState=GameState.Playing;
+    public ResumeGame() {
+        GameDefine.gameState = GameState.Playing;
+    }
+
+    public DieGame() {
+        GameDefine.gameState = GameState.Die;
+        EventManager.dispatchEvent(EventName.MINI_GAME_DIE);
+    }
+
+    public getRewardCoinCount(rank: number) {
+        switch (rank) {
+            case 1:
+                return 900;
+            case 2:
+                return 500;
+            case 3:
+                return 120;
+            case 4:
+                return 15;
+        }
     }
 
 

@@ -22,6 +22,12 @@ export default class GamePage extends Laya.Script {
   /** @prop {name:relifePage,tips:"预制体对象",type:Prefab}*/
   relifePage: Laya.Prefab;
 
+  /** @prop {name:resultPage,tips:"预制体对象",type:Prefab}*/
+  resultPage: Laya.Prefab;
+
+  /** @prop {name:loadingPage,tips:"预制体对象",type:Prefab}*/
+  loadingPage: Laya.Prefab;
+
   private dictPanelMap = new Map<string, Laya.Image>();
 
   constructor() {
@@ -30,17 +36,24 @@ export default class GamePage extends Laya.Script {
   }
 
   onAwake() {
-    let level = this.loadLevelFromCache();
-    GameManager.instance().loadLevel(level);
+
     AudioManager.instance().loadFromCache();
     this._panelLayer = this.owner.getChildByName("PanelLayer") as Laya.Box;
     this._popupLayer = this.owner.getChildByName("PopupLayer") as Laya.Box;
     this._tipLayer = this.owner.getChildByName("TipLayer") as Laya.Box;
-    this.showPage(Constants.UIPage.home, null);
+
   }
 
   onStart() {
+    let level = this.loadLevelFromCache();
+    this.showPage(Constants.UIPage.loading);
+    GameManager.instance().loadLevel(level).then(() => {
+      this.hidePage(Constants.UIPage.loading, () => {
+        this.showPage(Constants.UIPage.home, null);
+      });
+      console.log("init scene");
 
+    });
   }
 
   private loadLevelFromCache() {
@@ -80,7 +93,9 @@ export default class GamePage extends Laya.Script {
       const parent = this.getParent(comp.type);
       parent.active = true;
       parent.addChild(panel);
-
+      if (comp && comp['show']) {
+        comp['show'].apply(comp, args);
+      }
       cb && cb();
       return;
     }
@@ -127,6 +142,10 @@ export default class GamePage extends Laya.Script {
         return this.playingPage;
       case Constants.UIPage.relife:
         return this.relifePage;
+      case Constants.UIPage.result:
+        return this.resultPage;
+      case Constants.UIPage.loading:
+        return this.loadingPage
     }
   }
 

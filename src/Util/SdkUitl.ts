@@ -290,6 +290,20 @@ export class SdkUitl {
         return null;
 
     }
+
+    public static vibrateShort() {
+        if (Laya.Browser.onWeiXin) {
+            wx.vibrateShort && wx.vibrateShort({
+                type: "light"
+            })
+            return;
+        }
+
+        if(Laya.Browser.window.tt){
+            tt.vibrateShort&&tt.vibrateShort();
+            return;
+        }
+    }
 }
 
 

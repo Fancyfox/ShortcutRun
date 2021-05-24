@@ -1,4 +1,4 @@
-import GameData from "../script/Singleton/GameData";
+import GameData, { PlayerInfo } from "../script/Singleton/GameData";
 import { CharacterAnimation } from "../script/Singleton/GameDefine";
 import Obj from "./Obj";
 
@@ -9,6 +9,7 @@ export default class Charactor extends Obj {
     public playerMove: Laya.Vector3;
     public playerRotate: Laya.Vector3;
     public animationState: CharacterAnimation;
+    public playerInfo:PlayerInfo;
 
     public forward_speed: number = 0.15;
     public down_speed: number = 0.24;
@@ -31,7 +32,7 @@ export default class Charactor extends Obj {
     public vec_down: Laya.Vector3;
     public physicsSimulation: Laya.PhysicsSimulation;
 
-
+   
     onAwake() {
         super.onAwake();
         this.player = this.owner as Laya.Sprite3D;

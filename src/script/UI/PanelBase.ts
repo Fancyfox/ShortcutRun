@@ -5,8 +5,8 @@ export enum UITYpes {
     TUTORIAL
 }
 
-export   class PanelBase extends Laya.Script {
-    public  type: UITYpes = UITYpes.PANEL;
+export class PanelBase extends Laya.Script {
+    public type: UITYpes = UITYpes.PANEL;
     public isVisible: boolean = false;
     public onShowEnd: Function = null;
 
@@ -15,16 +15,16 @@ export   class PanelBase extends Laya.Script {
         switch (this.type) {
             case UITYpes.PANEL:
             case UITYpes.POPUP:
-                let panel:Laya.Image=this.owner as Laya.Image;
+                let panel: Laya.Image = this.owner as Laya.Image;
                 panel.scaleX = 0.8;
                 panel.scaleY = 0.8;
-                Laya.Tween.to(panel, { scaleX: 1.1, scaleY: 1.1 }, 0.2, () => {
-                    Laya.Tween.to(panel, { scaleX: 1, scaleY: 1 }, 0.1, () => {
+                Laya.Tween.to(panel, { scaleX: 1.1, scaleY: 1.1 }, 0.2, null, Laya.Handler.create(this, () => {
+                    Laya.Tween.to(panel, { scaleX: 1, scaleY: 1 }, 0.1, null, Laya.Handler.create(this, () => {
                         if (this.onShowEnd) {
                             this.onShowEnd();
                         }
-                    })
-                });
+                    }))
+                }));
                 break;
         }
     };
