@@ -1,0 +1,11 @@
+{
+  "code": "import { Constants } from \"../../Data/Constants\";\r\nimport GamePage from \"../Pages/GamePage\";\r\nimport EventManager from \"../Singleton/EventManager\";\r\nimport { EventName } from \"../Singleton/GameDefine\";\r\nimport { PanelBase, UITYpes } from \"./PanelBase\";\r\nexport default class Relife extends PanelBase {\r\n    constructor() {\r\n        super();\r\n        this.type = UITYpes.PANEL;\r\n        Relife.instance = this;\r\n    }\r\n    onAwake() {\r\n        this._relife = this.owner;\r\n        this._uiBox = this._relife.getChildAt(0);\r\n        this._relifeBtn = this._uiBox.getChildByName(\"RelifeBtn\");\r\n    }\r\n    onEnable() {\r\n        this._relifeBtn.on(Laya.Event.CLICK, this, this.playerRelfie.bind(this));\r\n    }\r\n    onDisable() {\r\n        this._relifeBtn.offAll();\r\n    }\r\n    show(...args) {\r\n        super.show();\r\n    }\r\n    hide() {\r\n        super.hide();\r\n    }\r\n    playerRelfie() {\r\n        GamePage.instance.hidePage(Constants.UIPage.relife, () => {\r\n            GamePage.instance.showPage(Constants.UIPage.playing, () => {\r\n                EventManager.dispatchEvent(EventName.PLAYER_RELIFE);\r\n            });\r\n        });\r\n    }\r\n}\r\nRelife.instance = null;\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Constants.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Entity/Player.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Pages/GamePage.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/EventManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/PanelBase.ts"
+  ]
+}

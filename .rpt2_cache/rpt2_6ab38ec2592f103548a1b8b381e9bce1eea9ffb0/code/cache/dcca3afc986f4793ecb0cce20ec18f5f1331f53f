@@ -1,0 +1,6 @@
+{
+  "code": "export default class GameData {\r\n    static getArrivalPos() {\r\n        if (this.arrival_pos_array.length < 0) {\r\n            return null;\r\n        }\r\n        else {\r\n            return this.arrival_pos_array.pop();\r\n        }\r\n    }\r\n    static resetData() {\r\n    }\r\n}\r\nGameData.level = 1;\r\nGameData.maxLevel = 20;\r\nGameData.arrival_pos_array = [];\r\nGameData.coin = 0;\r\nGameData.isMoveEnd = false;\r\nGameData.playerSkin_index = 0;\r\nGameData.playerSkin_maxindex = 5;\r\nGameData.playerSkinTex_array = [];\r\nGameData.princessSkin_index = 0;\r\nGameData.princessSkin_maxindex = 5;\r\nGameData.princessSkinTex_array = [];\r\nGameData.isShake = true;\r\nGameData.isShowHome = false;\r\nGameData.canRelife = true;\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts"
+  ]
+}

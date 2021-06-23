@@ -1,0 +1,4 @@
+{
+  "code": "export class Constants {\r\n}\r\nConstants.version = \"1.0.0\";\r\nConstants.UIPage = {\r\n    home: \"Home\",\r\n    playing: \"Playing\",\r\n    relife: \"Relife\",\r\n    result: \"Result\",\r\n    loading: \"Loading\",\r\n    shop: \"Shop\",\r\n    info: \"Info\",\r\n    setting: \"Setting\",\r\n    coinEffect: \"CoinEffect\"\r\n};\r\nConstants.GameConfigID = 'SHORTCOU_RUN';\r\nConstants.LevelTick = 'level_tick';\r\nConstants.AudioConfigID = 'audioConfigID';\r\nConstants.PlayerInfoID = 'playerInfoID';\r\nConstants.ShopInfoID = 'shopInfoID';\r\nConstants.PlankChooseID = 'plankChooseID';\r\nConstants.MaxPlankSkin = 8;\r\n",
+  "references": []
+}

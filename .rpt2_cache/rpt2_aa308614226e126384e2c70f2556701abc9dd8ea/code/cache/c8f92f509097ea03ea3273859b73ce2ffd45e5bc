@@ -1,0 +1,9 @@
+{
+  "code": "import { CharactorManager } from \"../../../Data/CharactorManager\";\r\nimport EventManager from \"../../Singleton/EventManager\";\r\nimport { EventName } from \"../../Singleton/GameDefine\";\r\nexport default class MoneyInfo extends Laya.Script {\r\n    onAwake() {\r\n        this._moneyBack = this.owner;\r\n        this._moenyLabel = this._moneyBack.getChildAt(0);\r\n    }\r\n    onEnable() {\r\n        this.refreshMoneyLabel();\r\n        EventManager.register(EventName.REDUCE_MOENY, this.refreshMoneyLabel, this);\r\n        EventManager.register(EventName.ADD_MOENY, this.refreshMoneyLabel, this);\r\n    }\r\n    onDisable() {\r\n        EventManager.unRegister(EventName.REDUCE_MOENY, this.refreshMoneyLabel, this);\r\n        EventManager.unRegister(EventName.ADD_MOENY, this.refreshMoneyLabel, this);\r\n    }\r\n    refreshMoneyLabel() {\r\n        this._moenyLabel.text = CharactorManager.instance().playerInfo.money.toString();\r\n        ;\r\n    }\r\n}\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/CharactorManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Constants.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/EventManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts"
+  ]
+}

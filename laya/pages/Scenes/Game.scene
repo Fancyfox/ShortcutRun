@@ -1,12 +1,12 @@
 {
     "x":0,
     "type":"View",
-    "selectedBox":22,
-    "selecteID":119,
+    "selectedBox":2,
+    "selecteID":23,
     "searchKey":"View,Game",
     "props":{"zOrder":0,"width":750,"sceneColor":"#000000","name":"Game","height":1334},
     "nodeParent":-1,
-    "maxID":132,
+    "maxID":167,
     "label":"Game",
     "isOpen":true,
     "isDirectory":true,
@@ -33,7 +33,7 @@
             "x":15,
             "type":"Box",
             "searchKey":"Box,PopupLayer",
-            "props":{"y":0,"x":0,"top":0,"right":0,"name":"PopupLayer","left":0,"bottom":0},
+            "props":{"y":0,"x":0,"visible":true,"top":0,"right":0,"name":"PopupLayer","left":0,"bottom":0},
             "nodeParent":2,
             "label":"PopupLayer",
             "isOpen":true,
@@ -48,7 +48,7 @@
             "x":15,
             "type":"Box",
             "searchKey":"Box,TipLayer",
-            "props":{"y":0,"x":0,"top":0,"right":0,"name":"TipLayer","left":0,"bottom":0},
+            "props":{"y":0,"x":0,"visible":true,"top":0,"right":0,"name":"TipLayer","left":0,"bottom":0},
             "nodeParent":2,
             "label":"TipLayer",
             "isOpen":true,
@@ -57,7 +57,24 @@
             "hasChild":false,
             "compId":24,
             "child":[
-                ]
+                ],
+            "$HIDDEN":true
+        },
+        {
+            "x":15,
+            "type":"Box",
+            "searchKey":"Box,EffectLayer",
+            "props":{"y":0,"x":0,"visible":true,"top":0,"right":0,"name":"EffectLayer","left":0,"bottom":0},
+            "nodeParent":2,
+            "label":"EffectLayer",
+            "isOpen":true,
+            "isDirectory":false,
+            "isAniNode":true,
+            "hasChild":false,
+            "compId":161,
+            "child":[
+                ],
+            "$HIDDEN":true
         },
         {
             "x":15,
@@ -66,7 +83,7 @@
             "source":"src/script/Pages/GamePage.ts",
             "searchKey":"Script,GamePage",
             "removeAble":true,
-            "props":{"resultPage":"@Prefab:prefab/ResultPage.prefab","relifePage":"@Prefab:prefab/RelifePage.prefab","playingPage":"@Prefab:prefab/PlayingPage.prefab","loadingPage":"@Prefab:prefab/LoadingPage.prefab","homePage":"@Prefab:prefab/HomePage.prefab","PlayingPage":"@Prefab:Prefabs/PlayingPage.prefab","HomePage":"@Prefab:Prefabs/HomePage.prefab"},
+            "props":{"shopPage":"@Prefab:prefab/ShopPage.prefab","settingPage":"@Prefab:prefab/SettingPage.prefab","resultPage":"@Prefab:prefab/ResultPage.prefab","relifePage":"@Prefab:prefab/RelifePage.prefab","playingPage":"@Prefab:prefab/PlayingPage.prefab","loadingPage":"@Prefab:prefab/LoadingPage.prefab","infoPage":"@Prefab:prefab/InfoPage.prefab","homePage":"@Prefab:prefab/HomePage.prefab","coinEffectPage":"@Prefab:prefab/CoinEffectPage.prefab","coin":"@Prefab:prefab/coin.prefab","PlayingPage":"@Prefab:Prefabs/PlayingPage.prefab","HomePage":"@Prefab:Prefabs/HomePage.prefab"},
             "nodeParent":2,
             "label":"GamePage",
             "isDirectory":false,

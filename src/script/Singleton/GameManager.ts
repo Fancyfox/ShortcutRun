@@ -1,7 +1,9 @@
 import { Constants } from "../../Data/Constants";
+import { MiniGameManager } from "../../Data/MiniGameManager";
 import Arrival from "../../Entity/Arrival";
 import Camera from "../../Entity/Camera";
 import Enemy from "../../Entity/Enemy";
+import Jumper from "../../Entity/Jumper";
 import Obj from "../../Entity/Obj";
 import Player from "../../Entity/Player";
 import Water from "../../Entity/Water";
@@ -11,8 +13,9 @@ import AudioManager from "./AudioManager";
 import CannonManager from "./CannonManager";
 import EffectUtil from "./EffectUtil";
 import ES from "./ES";
+import EventManager from "./EventManager";
 import GameData from "./GameData";
-import GameDefine, { GameState } from "./GameDefine";
+import GameDefine, { EventName, GameState } from "./GameDefine";
 import Handler = Laya.Handler;
 import Vector3 = Laya.Vector3;
 import Quaternion = Laya.Quaternion;
@@ -27,8 +30,7 @@ export default class GameManager {
     }
     /**3d场景 */
     private scene_3d: Laya.Scene3D;
-    /**2dUI场景 */
-    private scene_2d: Laya.Scene;
+
     private camera: Laya.Camera;
 
     /**Map AABB */
@@ -36,6 +38,7 @@ export default class GameManager {
     /**地形模型 */
     public map: Laya.Sprite3D;
     public road_mat: Laya.BlinnPhongMaterial;
+    public water_index = 0;
     public sky_mat: Laya.SkyBoxMaterial;
     /**当前关卡数据 */
     public data: any;
@@ -45,13 +48,7 @@ export default class GameManager {
 
 
 
-    /**
-      * 设置UI场景
-      * @param scene UI场景
-      */
-    public setUIScene(scene: Laya.Scene): void {
-        this.scene_2d = scene;
-    }
+
 
     public loadLevel(level: number) {
         GameData.name_array = GameData.RandomName();
@@ -61,9 +58,7 @@ export default class GameManager {
                 this.loadConfig(level),
                 this.loadSounds(),
                 this.loadRoadTextures(),
-
-
-
+                this.loadWaterTextures()
             ]).then(ret => {
                 this.data = ret[1];
                 this.data.objs.sort((a, b) => a.transform[14] - b.transform[14]);
@@ -77,7 +72,6 @@ export default class GameManager {
                 this.map.transform.rotation = Quaternion.DEFAULT;
                 this.scene_3d.addChild(this.map);
                 Laya.stage.getChildByName("root").addChildAt(this.scene_3d, 0);
-                console.log(Laya.stage, "root");
                 GameData.scene3d = this.scene_3d;
                 GameData.map = this.map;
                 if (this.road_mat) {
@@ -85,22 +79,17 @@ export default class GameManager {
                     if (GameData.roadTex_map.has(index.toString()))
                         this.road_mat.albedoTexture = GameData.roadTex_map.get(index.toString());
                 }
-                // this.loadSkyMat().then(() => {
-                //     this.loadSkyCube().then(() => {
-                //         this.camera.skyRenderer.material = this.sky_mat;
-                //         this.camera.enableRender = true;
-                //         this.scene_3d.skyRenderer.material = this.sky_mat;
-                //         console.log(this.camera.skyRenderer, "this.camera.skyRenderer");
-                //         console.log(this.scene_3d.skyRenderer, "this.scene_3d.skyRenderer");
-
-                //     })
-                // });
-                // CannonManager.instance.enableCannonWorld();
+                
+                if (MiniGameManager.instance().getSceneLevel() > 15 && MiniGameManager.instance().getSceneLevel() < 30) {
+                    EventManager.dispatchEvent(EventName.CHANGE_WATER, 0);
+                } else if (MiniGameManager.instance().getSceneLevel() >= 30) {
+                    EventManager.dispatchEvent(EventName.CHANGE_WATER, 1);
+                }
             }).then(() => {
                 this.init().then(() => {
                     this.isGameReady = true;
                     console.log("game ready");
-                    resolve();
+                     resolve();
                 });
             })
         })
@@ -115,6 +104,28 @@ export default class GameManager {
                     Laya.Texture2D.load(GameDefine.roadTexPath + i + ".png", Handler.create(null, (tex: Laya.Texture2D) => {
                         if (!GameData.roadTex_map.has(i.toString())) {
                             GameData.roadTex_map.set(i.toString(), tex)
+                        }
+                        resolve2();
+                    }))
+                }));
+            }
+            Promise.all(arr).then(() => {
+                Laya.timer.frameOnce(1, null, () => {
+                    resolve();
+                });
+            })
+        })
+    }
+
+    /**加载皮肤贴图 */
+    private loadWaterTextures() {
+        return new Promise<void>(resolve => {
+            let arr = [];
+            for (let i = 0; i < 2; i++) {
+                arr.push(new Promise<void>(resolve2 => {
+                    Laya.Texture2D.load(GameDefine.waterTexPath + i + ".png", Handler.create(null, (tex: Laya.Texture2D) => {
+                        if (!GameData.waterTex_map.has(i.toString())) {
+                            GameData.waterTex_map.set(i.toString(), tex)
                         }
                         resolve2();
                     }))
@@ -220,14 +231,8 @@ export default class GameManager {
 
 
         }
-        // Camera.instance.initCamera();
         ES.instance.on(ES.on_clear_scene, this, this.clearScene);
-        //  Home.instance.showHomeUI();
-        //   ES.instance.event(ES.on_level_loaded);
-        //  ES.instance.on(ES.on_clear_scene, this, this.clearScene);
 
-        //Log.log('collides', CannonManager.instance.world.bodies.length);
-        //Log.log('constraints', CannonManager.instance.world.constraints.length);
 
     }
 
@@ -314,7 +319,6 @@ export default class GameManager {
             case "water":
                 ins = clone.addComponent(Water);
                 break;
-
             case "character_base":
                 GameData.player = clone;
                 ins = clone.addComponent(Player);
@@ -326,6 +330,9 @@ export default class GameManager {
                 break;
             case "arrival":
                 ins = clone.addComponent(Arrival);
+                break;
+            case "jumper":
+                ins = clone.addComponent(Jumper);
                 break;
             default:
                 ins = clone.addComponent(Obj);
@@ -344,8 +351,6 @@ export default class GameManager {
         let scr = GameDefine.prefabRoot + 'Assets/Materialss/SkyMat.lmat';
         return new Promise<void>(resolve => {
             Laya.SkyBoxMaterial.load(scr, Laya.Handler.create(null, (m: Laya.SkyBoxMaterial) => {
-                //GameData.scene3d.skyRenderer.material = m;
-                console.log("load mat success", m);
                 this.sky_mat = m;
                 resolve();
             }));

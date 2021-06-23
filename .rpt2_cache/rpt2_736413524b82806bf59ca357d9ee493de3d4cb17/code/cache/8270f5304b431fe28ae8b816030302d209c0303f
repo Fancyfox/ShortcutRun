@@ -1,0 +1,4 @@
+{
+  "code": "export default class ES extends Laya.EventDispatcher {\r\n    static get instance() {\r\n        !this._instance && (this._instance = new ES());\r\n        return this._instance;\r\n    }\r\n}\r\nES.on_pass_level = 'on_pass_level';\r\nES.on_fail_level = 'on_fail_level';\r\nES.on_clear_scene = 'on_clear_scene';\r\nES.on_level_loaded = 'on_level_loaded';\r\nES.on_game_ready = 'on_game_ready';\r\nES.on_game_start = 'on_game_start';\r\nES.on_back_home = 'on_back_home';\r\nES.on_game_reset = 'on_game_reset';\r\nES.on_show_tip = 'on_show_tip';\r\nES.msg_draw_end = 'msg_draw_end';\r\nES.msg_be_discovered = 'msg_be_discovered';\r\nES.msg_be_freezed = 'msg_be_freezed';\r\nES.msg_off_trap = 'msg_off_trap';\r\nES.msg_switch_enter = 'msg_switch_enter';\r\nES.msg_hit_enemy = 'msg_hit_enemy';\r\nES.msg_camera_move = 'msg_camera_move';\r\nES.msg_save_princess = 'msg_save_princess';\r\n",
+  "references": []
+}

@@ -1,0 +1,4 @@
+{
+  "code": "export class Constants {\r\n}\r\nConstants.version = \"1.0.0\";\r\nConstants.UIPage = {\r\n    home: \"Home\",\r\n    playing: \"Playing\",\r\n    relife: \"Relife\"\r\n};\r\nConstants.GameConfigID = 'SHORTCOU_RUN';\r\nConstants.LevelTick = 'level_tick';\r\nConstants.AudioConfigID = 'audioConfigID';\r\n",
+  "references": []
+}

@@ -1,29 +1,39 @@
 import { CharactorManager } from "../../Data/CharactorManager";
 import { Configuration } from "../../Data/Configuration";
+import { MiniGameManager } from "../../Data/MiniGameManager";
 import { SdkUitl } from "../../Util/SdkUitl";
 import WeChatManager from "../../Util/WeChatManager";
+import DailyManager from "../Singleton/DailyManager";
 import GameManager from "../Singleton/GameManager";
+import GameRecorderManager from "../Singleton/GameRecorderManager";
 
 
-const width: number = 530;
+const width: number = 490;
 export default class LoadingPage extends Laya.Script {
     private uiBox: Laya.Box;
     private progress: Laya.Image;
     private _isSubload: boolean = false;
     private _enterGame: boolean = false;
-    private _subTask: any;
+    private _subTask: any = null;
     private _subProgress: number;
 
 
     onAwake() {
         this.uiBox = this.owner.getChildAt(0) as Laya.Box;
-        this.progress = this.owner.getChildByName("progress") as Laya.Image;
+        this.progress = this.owner.getChildByName("progressBack").getChildByName("progress") as Laya.Image;
         this.progress.width = 1;
     }
 
     onStart() {
         Configuration.instance().init();
         CharactorManager.instance().loadFromCache();
+        MiniGameManager.instance().loadLevelFromCache();
+        GameRecorderManager.instance().loadFromCache();
+        SdkUitl.initGameRecorder();
+        DailyManager.instance().loadFromCache();
+        SdkUitl.passiveShare();
+        SdkUitl.createVideoRewardAd();
+        
         this.loadSubPackages();
     }
 
@@ -37,13 +47,15 @@ export default class LoadingPage extends Laya.Script {
 
 
     private loadSubPackages() {
-        this._subTask = SdkUitl.loadSubpackage("sub1", () => {
+        //this._subTask = 
+        SdkUitl.loadSubpackage("sub1", () => {
             this.subCallback();
         })
 
         if (this._subTask) {
-            this._subTask.onProgressUpdate(res => {
+            this._subTask.onProgressUpdate((res) => {
                 this._subProgress = res.progress;
+                
             })
         }
 
@@ -54,11 +66,11 @@ export default class LoadingPage extends Laya.Script {
             if (this._subTask) {
                 this.progress.width = this._subProgress * 0.9 * width;
             } else {
-                this.progress.width += Laya.timer.delta / 1000 * 0.5 * width;
+                this.progress.width += Laya.timer.delta / 1000 * 0.6 * width;
             }
         } else {
             if (this._isSubload) {
-                this.progress.width += Laya.timer.delta / 1000 * 0.2 * width;
+                this.progress.width += Laya.timer.delta / 1000 * 0.3 * width;
             }
 
             if (this.progress.width >= width) {

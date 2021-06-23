@@ -6,6 +6,7 @@ export default class Charactor extends Obj {
     public player: Laya.Sprite3D;
     public blank_point: Laya.Sprite3D;
     public animator: Laya.Animator;
+    public trail:Laya.Sprite3D;
     public playerMove: Laya.Vector3;
     public playerRotate: Laya.Vector3;
     public animationState: CharacterAnimation;

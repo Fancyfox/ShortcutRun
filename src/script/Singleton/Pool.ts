@@ -11,6 +11,37 @@ export default class Pool {
     private effect_map = new Map<string, Laya.Sprite3D[]>();
     /**初始化方块的大小 */
     private cube_scale: Laya.Vector3 = new Laya.Vector3(1, 1, 1);
+    private static handle = new Map<string, Laya.Sprite3D[]>();
+
+    private static coinPool: Array<Laya.Sprite> = [];
+
+
+    public static Spawn(name: string, parent: Laya.Sprite3D, pos: Laya.Vector3): Laya.Sprite3D {
+        let obj: Laya.Sprite3D;
+        if (this.handle.has(name) && this.handle.get(name).length > 0) {
+            obj = this.handle.get(name).pop();
+            parent.addChild(obj)
+        } else {
+            let prefab = Laya.loader.getRes(GameDefine.prefabRoot + name + ".lh");
+            obj = Laya.Sprite3D.instantiate(prefab, parent, true) as Laya.Sprite3D;
+        }
+        obj.transform.position = pos;
+        obj.active = true;
+        return obj;
+    }
+
+    public static RecycleObj(target: Laya.Sprite3D, name: string) {
+
+        target.removeSelf();
+        if (this.handle.has(name)) {
+            this.handle.get(name).push(target);
+        } else {
+            let pool: Laya.Sprite3D[] = [];
+            pool.push(target);
+            this.handle.set(name, pool);
+        }
+    }
+
     public getPlank_hand(parent: Laya.Sprite3D, pos: Laya.Vector3): Laya.Sprite3D {
 
         let cube: Laya.Sprite3D
@@ -85,6 +116,22 @@ export default class Pool {
 
         this.plankHand_array.length = 0;
         this.plankRoad_array.length = 0;;
+    }
+
+    public static getCoin(coinPrefab: Laya.Prefab, parent: Laya.Box) {
+        var obj: Laya.Sprite = null;
+        if (this.coinPool.length > 0) {
+            obj = this.coinPool.pop();
+        } else {
+            obj = coinPrefab.create();
+        }
+        parent.addChild(obj);
+        return obj
+    }
+    public static putCoin(obj: Laya.Sprite) {
+        Laya.Tween.clearAll(obj);
+        obj.removeSelf();
+        this.coinPool.push(obj);
     }
 
 

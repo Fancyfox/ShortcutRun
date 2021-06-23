@@ -8,16 +8,19 @@ import EventManager from "../script/Singleton/EventManager";
 import GameData from "../script/Singleton/GameData";
 import GameDefine, { CharacterAnimation, CharacterState, EventName, GameState } from "../script/Singleton/GameDefine";
 import Pool from "../script/Singleton/Pool";
+import { ShopManager } from "../script/Singleton/ShopManager";
+import { StaticDataManager } from "../Tmpl/StaticDataManager";
 import RandomUtil from "../Util/RandomUtil";
 import { SdkUitl } from "../Util/SdkUitl";
 import Camera from "./Camera";
 import Charactor from "./Charactor";
+import Jumper from "./Jumper";
 import Obj from "./Obj";
-
+const speed: number = 0.15;
 export default class Player extends Charactor {
     private _point: Laya.Sprite3D;
     private _camera: Laya.Camera;
-    private _rotate_speed: number = 0.35;
+    private _rotate_speed: number = 0.25;
     /**现在帧数的手指x位置 */
     private curFrameTouchPoint_x: number;
     /**最后一帧的手指X位置 */
@@ -31,9 +34,14 @@ export default class Player extends Charactor {
     private _isMoveArrival: boolean = false;
 
     private _relifePart: Laya.Sprite3D;
+    private _plank_prefab: string;
 
+    private _excitedTimer: number = -1;
 
-
+    private _bigJump: boolean = false;
+    private _jumpInitSpeed: number = 1.5;
+    private _bigJumpSpeed: number;
+    private _bigJmmpG: number = 0.0015;
 
 
 
@@ -44,6 +52,7 @@ export default class Player extends Charactor {
     onAwake() {
         super.onAwake();
         this.player = this.owner as Laya.Sprite3D;
+        this.trail = this.player.getChildByName("trail") as Laya.Sprite3D;
         this._point = this.player.getChildByName("point") as Laya.Sprite3D;
         this.blank_point = this.player.getChildByName("plank_point") as Laya.Sprite3D;
         this.animator = this.player.getComponent(Laya.Animator);
@@ -69,6 +78,7 @@ export default class Player extends Charactor {
             player: true
         }
         GameData.playerInfos.push(this.playerInfo);
+        this._hideTrail();
     }
 
     onEnable() {
@@ -145,9 +155,12 @@ export default class Player extends Charactor {
         // return;
         // console.log(this.player.transform.position.y, "positionY");
 
+
         this.rayCast();
         switch (this.animationState) {
             case CharacterAnimation.Planche:
+                this._showTrail();
+                this._addSpeed();
                 this._moveForward();
                 if (this.player.transform.localPositionY < 0) {
                     this.player.transform.localPositionY = 0
@@ -155,6 +168,12 @@ export default class Player extends Charactor {
                 break;
             case CharacterAnimation.Carrying:
             case CharacterAnimation.Running:
+                this._hideTrail();
+                if (!GameData.excited) {
+                    this.forward_speed = speed;
+                    this.playerMove.setValue(0, 0, this.forward_speed);
+                }
+
                 this._moveForward();
                 if (this.player.transform.localPositionY < 0) {
                     this.player.transform.localPositionY = 0
@@ -165,7 +184,28 @@ export default class Player extends Charactor {
                 this._moveForward();
                 if (this.juageWaterDistance()) {
                     AudioManager.instance().playEffect("FallInWater");
+                    this.clearExcited();
+                    let pos: Laya.Vector3 = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
+                    EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
+                        res.active = true;
+                    });
+                    if (GameData.canRelife) {
+                        GameData.canRelife = false;
+                        MiniGameManager.instance().PauseGame();
 
+
+                    } else {
+                        MiniGameManager.instance().DieGame();
+                    }
+                }
+                break;
+            case CharacterAnimation.BigJump:
+                this._bigJumpSpeed -= this._bigJmmpG * Laya.timer.delta;
+                this.playerMove.y = this._bigJumpSpeed;
+                this._moveForward();
+                if (this.juageWaterDistance() && this.cube_count <= 0) {
+                    AudioManager.instance().playEffect("FallInWater");
+                    this.clearExcited();
                     let pos: Laya.Vector3 = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
                     EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
                         res.active = true;
@@ -226,6 +266,10 @@ export default class Player extends Charactor {
             case CharacterAnimation.Idel:
                 this.playerMove.setValue(0, 0, 0);
                 break;
+            case CharacterAnimation.BigJump:
+                this._bigJumpSpeed = this._jumpInitSpeed;
+                this.playerMove.setValue(0, this._bigJumpSpeed, this.forward_speed);
+                break;
             default:
                 break;
         }
@@ -239,12 +283,23 @@ export default class Player extends Charactor {
         } else {
             this.animator.speed = 1;
         }
+
+        if (state == CharacterAnimation.BigJump) {
+            state = CharacterAnimation.Carrying;
+        }
         this.animator.play(state);
     }
 
     private onGameStart() {
-        this.changePlayerState(CharacterAnimation.Running)
+        this.forward_speed = speed;
+        this.setHandPrefab();
+
         this.startRay();
+        this._hideTrail();
+        if (GameData.excited) {
+            this.startExcited();
+        }
+        this.changePlayerState(CharacterAnimation.Running);
     }
 
     private onGameEnd() {
@@ -303,13 +358,26 @@ export default class Player extends Charactor {
         switch (state) {
             case CharacterAnimation.Planche:
                 switch (colliderName) {
+                    case "jumper":
+                        if (!this._bigJump) {
+                            this._bigJump = true;
+                            Laya.timer.once(1000, this, () => {
+                                this._bigJump = false;
+                            })
+                        }
+                        this.changePlayerState(CharacterAnimation.BigJump);
+                        let jumper = this.outInfo.collider.owner as Laya.Sprite3D;
+                        let ins = jumper.getComponent(Jumper);
+                        if (ins) {
+                            ins.playJumpAni();
+                        }
+
+                        break;
                     case "arrival":
                         this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
                         break;
                     case "water":
                         if (this.cube_count > 0) {
-                            console.log("pop blank");
-
                             this._popPlankToRoad();
                             this.changePlayerState(CharacterAnimation.Planche);
                         } else {
@@ -335,6 +403,21 @@ export default class Player extends Charactor {
             case CharacterAnimation.Carrying:
             case CharacterAnimation.Running:
                 switch (colliderName) {
+                    case "jumper":
+                        if (!this._bigJump) {
+                            this._bigJump = true;
+                            Laya.timer.once(1000, this, () => {
+                                this._bigJump = false;
+                            })
+                        }
+                        this.changePlayerState(CharacterAnimation.BigJump);
+                        let jumper = this.outInfo.collider.owner as Laya.Sprite3D;
+                        let ins = jumper.getComponent(Jumper);
+                        if (ins) {
+                            ins.playJumpAni();
+                        }
+
+                        break;
                     case "arrival":
                         this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
                         break;
@@ -359,11 +442,59 @@ export default class Player extends Charactor {
 
                 }
                 break;
-            case CharacterAnimation.Jump:
+            case CharacterAnimation.BigJump:
+                if (this._bigJump) {
+                    return;
+                }
                 switch (colliderName) {
+                    case "water":
+                        if (this.player.transform.localPositionY < 0 && this.cube_count > 0) {
+                            this.player.transform.localPositionY = 0;
+                            this.changePlayerState(CharacterAnimation.Planche);
+                            return;
+                        }
+                    case "plank":
+                    case "Turn_45_L":
+                    case "Turn_45_R":
+                    case "Turn_45_short_L":
+                    case "Turn_45_short_R":
+                    case "Cylinder":
+                    case "Stright":
+                        if (this.juageRoadDistance()) {
+                            if (this.cube_count > 0) {
+                                this.changePlayerState(CharacterAnimation.Planche);
+                            } else {
+                                this.changePlayerState(CharacterAnimation.Running);
+                            }
+
+                            if (this.player.transform.localPositionY < 0) {
+                                this.player.transform.localPositionY = 0;
+                            }
+                            return;
+                        }
+                }
+
+            case CharacterAnimation.Jump:
+
+                switch (colliderName) {
+                    case "jumper":
+                        if (!this._bigJump) {
+                            this._bigJump = true;
+                            Laya.timer.once(1000, this, () => {
+                                this._bigJump = false;
+                            })
+                        }
+                        this.changePlayerState(CharacterAnimation.BigJump);
+                        let jumper = this.outInfo.collider.owner as Laya.Sprite3D;
+                        let ins = jumper.getComponent(Jumper);
+                        if (ins) {
+                            ins.playJumpAni();
+                        }
+
+                        break;
                     case "arrvial":
                         if (this.juageRoadDistance()) {
-                            if (this.player.transform.localPositionY < 0) {
+                            if (this.player.transform.localPositionY < 1) {
                                 this.player.transform.localPositionY = 0;
                             }
                             this._moveArrivalPoint(this.outInfo.collider.owner as Laya.Sprite3D)
@@ -383,12 +514,17 @@ export default class Player extends Charactor {
                             }
                         }
                         break;
-                    case "plank_road":
-                        if (this.juageBlankDistance(point)) {
-                            console.log("judge blank road");
-                            this.changePlayerState(CharacterAnimation.Running);
+                    default:
+                        if (colliderName.substring(0, 10) == "plank_hand") {
+                            if (this.juageBlankDistance(point)) {
+                                console.log("judge blank road");
+                                this.changePlayerState(CharacterAnimation.Running);
+                            }
                         }
                         break;
+                    // case "plank_road":
+
+                    //     break;
                 }
                 break;
         }
@@ -417,15 +553,31 @@ export default class Player extends Charactor {
         } else {
             pos = this.blank_point.transform.position.clone();
         }
-        let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+
+        let cube = Pool.Spawn(this._plank_prefab, this.blank_point, pos);
         let animator = cube.getComponent(Laya.Animator) as Laya.Animator;
+        animator.enabled = true;
         animator.play("blank_push");
+        let coll = cube.getComponent(Laya.PhysicsCollider) as Laya.PhysicsCollider;
+        coll.enabled = false;
         let target_y = cube.transform.localPositionY + 0.2;
         Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
         cube.transform.rotation = this.blank_point.transform.rotation;
         this.cube_array.push(cube);
         AudioManager.instance().playEffect("Collect");
         SdkUitl.vibrateShort();
+        EventManager.dispatchEvent(EventName.PLAYER_PLANK_CHANGE, this.cube_count);
+    }
+
+    private _addSpeed() {
+        if (GameData.excited) {
+            return;
+        }
+
+        if (this.forward_speed < speed + 0.15) {
+            this.forward_speed += Laya.timer.delta / 1000 * 0.01;
+            this.playerMove.setValue(0, 0, this.forward_speed);
+        }
     }
 
     private _popPlankToRoad() {
@@ -440,17 +592,22 @@ export default class Player extends Charactor {
 
         let cube = this.cube_array.pop();
         this.cube_count--;
-        Pool.instance.reversePlankHandCube(cube);
-
-        let plankRoad = Pool.instance.getPlank_road(GameData.map, this.player.transform.position.clone())
+        //Pool.instance.reversePlankHandCube(cube);
+        Pool.RecycleObj(cube, this._plank_prefab);
+        let plankRoad = Pool.Spawn(this._plank_prefab, GameData.map, this.player.transform.position.clone())//Pool.instance.getPlank_road(GameData.map, this.player.transform.position.clone())
         plankRoad.transform.rotation = this.player.transform.rotation.clone();
         plankRoad.transform.setWorldLossyScale(Laya.Vector3.one);
+        let animator = plankRoad.getComponent(Laya.Animator) as Laya.Animator;
+        animator.enabled = false;
+        let coll = plankRoad.getComponent(Laya.PhysicsCollider) as Laya.PhysicsCollider;
+        coll.enabled = true;
         this._canPop = false;
         Laya.timer.once(200, this, () => {
             this._canPop = true;
         });
         AudioManager.instance().playEffect("Put");
         SdkUitl.vibrateShort();
+        EventManager.dispatchEvent(EventName.PLAYER_PLANK_CHANGE, this.cube_count);
     }
 
     private _clearPlank() {
@@ -461,7 +618,7 @@ export default class Player extends Charactor {
             }
             let cube = this.cube_array.pop();
             this.cube_count--;
-            Pool.instance.reversePlankHandCube(cube);
+            Pool.RecycleObj(cube, this._plank_prefab);
         })
     }
 
@@ -496,13 +653,14 @@ export default class Player extends Charactor {
         this._throwPlank(() => {
             this._clearPlank();
         })
+        this.clearExcited();
         this.changePlayerState(CharacterAnimation.Running)
         let pos = GameData.getArrivalPos();
         this.player.transform.lookAt(pos, Laya.Vector3.up, false, false)
         this._isMoveArrival = true;
         this._clearMoveTween();
         this.charactor_tween.to(this.player.transform, { localPositionX: pos.x, localPositionZ: pos.z }, 500, null, this.moveArrivalpointHandler)
-
+        this._hideTrail();
     }
 
     private _clearMoveTween() {
@@ -517,6 +675,7 @@ export default class Player extends Charactor {
         GameData.playRank = this.playerInfo.rank;
         GameData.rank++;
         MiniGameManager.instance().EndGame();
+
         //如果第一名播放胜利动画 否则播放失败动画
         if (this.playerInfo.rank === 1) {
             AudioManager.instance().playEffect("Win");
@@ -547,9 +706,50 @@ export default class Player extends Charactor {
             let target = this._relifePart.getChildAt(0) as Laya.Sprite3D;
             this.player.transform.lookAt(target.transform.position.clone(), Laya.Vector3.up, false, false);
             MiniGameManager.instance().ResumeGame();
+            this._hideTrail();
         } else {
 
         }
+    }
+
+    private setHandPrefab() {
+        let id = ShopManager.instance().getChoosePlankID();
+        let tmpl = StaticDataManager.getPlanksRecord(id);
+        this._plank_prefab = tmpl.Prefab;
+    }
+
+    private _showTrail() {
+        if (!this.trail.active) {
+            this.trail.active = true;
+        }
+    }
+
+    private _hideTrail() {
+        if (GameData.excited) {
+            return;
+        }
+        if (this.trail.active) {
+            this.trail.active = false;
+        }
+    }
+
+    private startExcited() {
+        this._showTrail();
+        this.forward_speed = speed + 0.1;
+        this._excitedTimer = setTimeout(() => {
+            this.clearExcited();
+        }, 10000);
+    }
+
+    private clearExcited() {
+        if (!GameData.excited) {
+            return;
+        }
+
+        this.forward_speed = speed;
+        GameData.excited = false;
+        clearTimeout(this._excitedTimer);
+        this._hideTrail();
     }
 
 }

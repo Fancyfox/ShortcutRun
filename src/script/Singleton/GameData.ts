@@ -7,8 +7,7 @@ export interface PlayerInfo {
 }
 
 export default class GameData {
-    /**当前关卡 */
-    public static level: number = 1;
+
     /**最大关卡数 */
     public static maxLevel: number = 20;
     /**摄像机 */
@@ -21,25 +20,16 @@ export default class GameData {
     public static arrival_pos: Laya.Vector3;
     /**终点坐标数组 */
     public static arrival_pos_array: Array<Laya.Vector3> = [];
-    /**金币数量 */
-    public static coin: number = 0;
-    /**玩家是否移动结束 */
-    public static isMoveEnd: boolean = false;
 
-    /**玩家当前皮肤索引 */
-    public static playerSkin_index: number = 0;
-    /**玩家皮肤最大索引 */
-    public static playerSkin_maxindex: number = 5;
-    /**玩家皮肤贴图数组 */
-    public static playerSkinTex_array: Array<Laya.Texture2D> = [];
 
-    /**公主当前皮肤索引 */
-    public static princessSkin_index: number = 0;
-    /**公主皮肤最大索引 */
-    public static princessSkin_maxindex: number = 5;
+
+
+
+
     /**跑道贴图数组 */
     public static roadTex_map = new Map<string, Laya.Texture2D>();
-
+/**跑道贴图数组 */
+public static waterTex_map = new Map<string, Laya.Texture2D>();
     /**是否开启震动 */
     public static isShake: boolean = true;
 
@@ -54,15 +44,16 @@ export default class GameData {
     public static canRelife: boolean = true;
     public static rank: number = 1;
     public static rewardCoin: number = 0;
+    public static rewardScore: number = 0
     public static playRank: number = 1;
 
     public static playerInfos: PlayerInfo[] = [];
 
+    public static excited: boolean = false;
+
 
 
     public static getArrivalPos(): Laya.Vector3 {
-        console.log(this.arrival_pos_array, "arrival pos array");
-
         if (this.arrival_pos_array.length <= 0) {
             return null;
         } else {
@@ -76,6 +67,7 @@ export default class GameData {
         this.rank = 1;
         this.playRank = 1;
         this.rewardCoin = 0;
+        this.rewardScore = 0;
         this.canRelife = true;
     }
 

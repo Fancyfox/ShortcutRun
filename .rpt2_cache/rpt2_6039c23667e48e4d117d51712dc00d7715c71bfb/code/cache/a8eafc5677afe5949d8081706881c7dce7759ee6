@@ -1,0 +1,7 @@
+{
+  "code": "import AudioManager from \"../script/Singleton/AudioManager\";\r\nimport Obj from \"./Obj\";\r\nexport default class Jumper extends Obj {\r\n    onAwake() {\r\n        super.onAwake();\r\n        this._jumper = this.owner;\r\n        this._arrow = this._jumper.getChildByName(\"arrow\");\r\n        this._jumperAnimater = this._jumper.getChildByName(\"jumper.001\").getChildAt(0).getComponent(Laya.Animator);\r\n    }\r\n    playJumpAni() {\r\n        this._jumperAnimater.play();\r\n        AudioManager.instance().playEffect(\"Jumper\");\r\n    }\r\n}\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/AudioManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Entity/Obj.ts"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+	"front":"skyCubeMap_PositiveZ.png",
+	"back":"skyCubeMap_NegativeZ.png",
+	"left":"skyCubeMap_PositiveX.png",
+	"right":"skyCubeMap_NegativeX.png",
+	"up":"skyCubeMap_PositiveY.png",
+	"down":"skyCubeMap_NegativeY.png"
+}

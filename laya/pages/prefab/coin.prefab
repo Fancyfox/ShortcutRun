@@ -1,0 +1,25 @@
+{
+    "x":0,
+    "type":"Sprite",
+    "selectedBox":164,
+    "searchKey":"Sprite,coin",
+    "props":{"y":40,"x":40,"width":80,"texture":"textures/Coin.png","presetID":1,"preset":"laya/pages/prefab/coin.prefab","pivotY":40,"pivotX":40,"name":"coin","isPresetRoot":true,"height":80},
+    "nodeParent":-1,
+    "maxID":165,
+    "label":"coin",
+    "isDirectory":false,
+    "isAniNode":true,
+    "hasChild":false,
+    "compId":164,
+    "child":[
+        ],
+    "animations":[
+        {
+            "nodes":[
+                ],
+            "name":"ani1",
+            "id":1,
+            "frameRate":24,
+            "action":0
+        }]
+}

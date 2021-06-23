@@ -9,12 +9,160 @@
         playing: "Playing",
         relife: "Relife",
         result: "Result",
-        loading: "Loading"
+        loading: "Loading",
+        shop: "Shop",
+        info: "Info",
+        setting: "Setting",
+        coinEffect: "CoinEffect"
     };
     Constants.GameConfigID = 'SHORTCOU_RUN';
     Constants.LevelTick = 'level_tick';
     Constants.AudioConfigID = 'audioConfigID';
     Constants.PlayerInfoID = 'playerInfoID';
+    Constants.ShopInfoID = 'shopInfoID';
+    Constants.PlankChooseID = 'plankChooseID';
+    Constants.GameRecordID = 'gameRecordID';
+    Constants.DailyTick = 'dailyTick';
+    Constants.MaxPlankSkin = 8;
+
+    class EventManager {
+        static register(eventName, cb, target) {
+            if (!this.handle[eventName]) {
+                this.handle[eventName] = [];
+            }
+            const data = { func: cb, target };
+            this.handle[eventName].push(data);
+        }
+        static unRegister(eventName, cb, target) {
+            const list = this.handle[eventName];
+            if (!list || list.length <= 0) {
+                return;
+            }
+            for (let i = 0; i < list.length; i++) {
+                const event = list[i];
+                if (event.func === cb && (!target || target === event.target)) {
+                    list.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        static dispatchEvent(eventName, ...args) {
+            const list = this.handle[eventName];
+            if (!list || list.length <= 0) {
+                return;
+            }
+            for (let i = 0; i < list.length; i++) {
+                const event = list[i];
+                event.func.apply(event.target, args);
+            }
+        }
+    }
+    EventManager.handle = {};
+
+    var GameState;
+    (function (GameState) {
+        GameState[GameState["None"] = 0] = "None";
+        GameState[GameState["Ready"] = 1] = "Ready";
+        GameState[GameState["PreviewMap"] = 2] = "PreviewMap";
+        GameState[GameState["Playing"] = 3] = "Playing";
+        GameState[GameState["Pause"] = 4] = "Pause";
+        GameState[GameState["Die"] = 5] = "Die";
+        GameState[GameState["End"] = 6] = "End";
+    })(GameState || (GameState = {}));
+    var CharacterState;
+    (function (CharacterState) {
+        CharacterState[CharacterState["None"] = 0] = "None";
+        CharacterState[CharacterState["Idle"] = 1] = "Idle";
+        CharacterState[CharacterState["Run"] = 2] = "Run";
+        CharacterState[CharacterState["Die"] = 3] = "Die";
+        CharacterState[CharacterState["Win"] = 4] = "Win";
+    })(CharacterState || (CharacterState = {}));
+    var CharacterAnimation;
+    (function (CharacterAnimation) {
+        CharacterAnimation["Idel"] = "idle";
+        CharacterAnimation["Running"] = "running";
+        CharacterAnimation["Falling"] = "falling";
+        CharacterAnimation["Escalade"] = "escalade";
+        CharacterAnimation["Back"] = "back";
+        CharacterAnimation["Carrying"] = "carrying";
+        CharacterAnimation["Jump"] = "jump";
+        CharacterAnimation["Planche"] = "planche";
+        CharacterAnimation["Defeated"] = "defeated";
+        CharacterAnimation["Dance"] = "dance";
+        CharacterAnimation["BigJump"] = "bigJump";
+    })(CharacterAnimation || (CharacterAnimation = {}));
+    var PlankType;
+    (function (PlankType) {
+        PlankType["Default"] = "plank_hand_default";
+        PlankType["Bills"] = "plank_hand_bills";
+        PlankType["Biscuit"] = "plank_hand_biscuit";
+        PlankType["Diskstar"] = "plank_hand_diskstar";
+        PlankType["Flower"] = "plank_hand_flower";
+        PlankType["Gold"] = "plank_hand_gold";
+        PlankType["Hotdog"] = "plank_hand_hotdog";
+        PlankType["Overboard"] = "plank_hand_overboard";
+        PlankType["Pizza"] = "plank_hand_pizza";
+    })(PlankType || (PlankType = {}));
+    var EventName;
+    (function (EventName) {
+        EventName["MINI_GAME_START"] = "mini-game-start";
+        EventName["MINI_GAME_END"] = "mini-game-end";
+        EventName["MINI_GAME_DIE"] = "mini-game-die";
+        EventName["MINI_GAME_RELIFE"] = "mini-game-relife";
+        EventName["PLAYER_RELIFE"] = "player-relife";
+        EventName["ADD_MOENY"] = "add-money";
+        EventName["REDUCE_MOENY"] = "reduce-money";
+        EventName["ADD_SCORE"] = "add-score";
+        EventName["CHANGE_TITLE"] = "change=title";
+        EventName["CHANGE_WATER"] = "change-water";
+        EventName["SHOP_PLANK_CHOOSE"] = "shop_plank_choose";
+        EventName["SHOP_PLANK_BUY"] = "shio_plank_buy";
+        EventName["NEXT_LEVEL"] = "next-level";
+        EventName["PLAYER_PLANK_CHANGE"] = "player-plank-change";
+    })(EventName || (EventName = {}));
+    class GameDefine {
+    }
+    GameDefine.maxLevel = 4;
+    GameDefine.prefabRoot = 'subPackage/sub1/LayaScene_main/Conventional/';
+    GameDefine.levelRoot = 'subPackage/sub1/LayaScene_main/remote/levels/';
+    GameDefine.scenePath = "subPackage/sub1/LayaScene_main/Conventional/main.ls";
+    GameDefine.wordTexPath = 'subPackage/LayaScene_main/tex/';
+    GameDefine.soundPath = 'subPackage/LayaScene_main/sounds/';
+    GameDefine.roadTexPath = 'subPackage/sub1/RoadTextures/ground_';
+    GameDefine.waterTexPath = 'subPackage/sub1/WaterTextures/water_';
+    GameDefine.dataPath = "data/";
+    GameDefine.preload = [
+        "character_base.lh",
+        "water.lh",
+        "plank_road.lh",
+        "Turn_45_L.lh",
+        "Turn_45_R.lh",
+        "Turn_45_short_L.lh",
+        "Turn_45_short_R.lh",
+        "arrival.lh",
+        "fallEffect.lh",
+        "planks.lh",
+        "enemy.lh",
+        "Stright.lh",
+        "Cylinder.lh",
+        "plank_hand_default.lh",
+        "plank_hand_bills.lh",
+        "plank_hand_biscuit.lh",
+        "plank_hand_diskstar.lh",
+        "plank_hand_flower.lh",
+        "plank_hand_gold.lh",
+        "plank_hand_hotdog.lh",
+        "plank_hand_overboard.lh",
+        "plank_hand_pizza.lh",
+        "jumper.lh"
+    ];
+    GameDefine.sounds = [];
+    GameDefine.bgms = [
+        "bgm.mp3"
+    ];
+    GameDefine.gameState = GameState.None;
+    GameDefine.playerState = CharacterState.None;
+    GameDefine.CollisionGroup_Obs = Laya.Physics3DUtils.COLLISIONFILTERGROUP_CUSTOMFILTER3;
 
     class Configuration {
         constructor() {
@@ -53,6 +201,208 @@
     }
     Configuration._instance = null;
 
+    class MiniGameManager {
+        constructor() {
+            this._level = 1;
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new MiniGameManager();
+            }
+            return this._instance;
+        }
+        loadLevelFromCache() {
+            const levelTick = Configuration.instance().getConfigData(Constants.LevelTick);
+            if (levelTick) {
+                this._level = Number(JSON.parse(levelTick));
+            }
+        }
+        _saveLevelToCache() {
+            const data = JSON.stringify(this._level);
+            Configuration.instance().setConfigData(Constants.LevelTick, data);
+        }
+        nextLevel() {
+            this._level++;
+            this._saveLevelToCache();
+            EventManager.dispatchEvent(EventName.NEXT_LEVEL, this._level);
+        }
+        getSceneLevel() {
+            return this._level;
+        }
+        StartGame() {
+            GameDefine.gameState = GameState.Playing;
+            EventManager.dispatchEvent(EventName.MINI_GAME_START);
+        }
+        EndGame() {
+            GameDefine.gameState = GameState.End;
+            EventManager.dispatchEvent(EventName.MINI_GAME_END);
+        }
+        PauseGame() {
+            GameDefine.gameState = GameState.Pause;
+            EventManager.dispatchEvent(EventName.MINI_GAME_RELIFE);
+        }
+        ResumeGame() {
+            GameDefine.gameState = GameState.Playing;
+        }
+        DieGame() {
+            GameDefine.gameState = GameState.Die;
+            EventManager.dispatchEvent(EventName.MINI_GAME_DIE);
+        }
+        getRewardCoinCount(rank) {
+            switch (rank) {
+                case 1:
+                    return 200;
+                case 2:
+                    return 100;
+                case 3:
+                    return 50;
+                case 4:
+                    return 10;
+                default:
+                    return 0;
+            }
+        }
+        getRankScore(rank) {
+            switch (rank) {
+                case 1:
+                    return 3;
+                case 2:
+                    return 2;
+                case 3:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+    }
+    MiniGameManager._instance = null;
+
+    class AudioManager {
+        constructor() {
+            this.audioInfo = null;
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new AudioManager();
+            }
+            return this._instance;
+        }
+        getAudioData() {
+            return this.audioInfo;
+        }
+        loadFromCache() {
+            const audioInfo = Configuration.instance().getConfigData(Constants.AudioConfigID);
+            if (audioInfo) {
+                this.audioInfo = JSON.parse(audioInfo);
+            }
+            else {
+                this._generateAudio();
+            }
+        }
+        saveAudioInfoToCache() {
+            const data = JSON.stringify(this.audioInfo);
+            Configuration.instance().setConfigData(Constants.AudioConfigID, data);
+        }
+        _generateAudio() {
+            this.audioInfo = {
+                musicMute: false,
+                effectMute: false,
+                musicVolume: 0.5,
+                effectVolume: 0.5,
+                vibrate: true
+            };
+            this.saveAudioInfoToCache();
+        }
+        playMusic(name) {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+                SdkUitl.playMusic(name, true);
+            }
+        }
+        resumeMusic() {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+            }
+        }
+        pasueMusic() {
+            if (this.audioInfo && !this.audioInfo.musicMute) {
+            }
+        }
+        stopMusic() {
+        }
+        setVibrate(vibrate) {
+            if (this.audioInfo.vibrate = vibrate) {
+                return;
+            }
+            this.audioInfo.vibrate = vibrate;
+            this.saveAudioInfoToCache();
+        }
+        getVibrate() {
+            return this.audioInfo.vibrate;
+        }
+        setMusicVolume(volume) {
+        }
+        playEffect(name) {
+            if (this.audioInfo && !this.audioInfo.effectMute) {
+                const path = `subPackage/sub2/Audio/Effect/${name}.mp3`;
+                Laya.SoundManager.playSound(path);
+            }
+        }
+        setAudioMute(mute) {
+            if (this.audioInfo.effectMute == mute) {
+                return;
+            }
+            this.audioInfo.effectMute = mute;
+            this.audioInfo.musicMute = mute;
+            this.saveAudioInfoToCache();
+        }
+        getAudioMute() {
+            return this.audioInfo.effectMute;
+        }
+        stopAllEffects() {
+        }
+        setEffectVolume(volume) {
+        }
+    }
+    AudioManager._instance = null;
+
+    class GameRecorderManager {
+        constructor() {
+            this._recordCount = 0;
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new GameRecorderManager();
+            }
+            return this._instance;
+        }
+        loadFromCache() {
+            const info = Configuration.instance().getConfigData(Constants.GameRecordID);
+            if (info) {
+                this._recordCount = JSON.parse(info);
+            }
+        }
+        saveInfoToCache() {
+            const data = JSON.stringify(this._recordCount);
+            Configuration.instance().setConfigData(Constants.GameRecordID, data);
+        }
+        canShowReward() {
+            if (!Laya.Browser.window.tt) {
+                return false;
+            }
+            return this._recordCount < 3;
+        }
+        resetHRecord() {
+            this._recordCount = 0;
+            this.saveInfoToCache();
+        }
+        addRecordCount() {
+            if (this.canShowReward()) {
+                this._recordCount++;
+                this.saveInfoToCache();
+            }
+        }
+    }
+    GameRecorderManager._instance = null;
+
     class RandomUtil {
         static Random(min = 0, max = 1) {
             return min + (max - min) * Math.random();
@@ -73,23 +423,26 @@
     }
 
     const templateId_tt = "";
-    const videoAdUnitId_wx = "";
-    const videoAdUnitId_tt = "";
+    const videoAdUnitId_wx = '4j4fnj2n21l1d96165';
+    const videoAdUnitId_tt = '4j4fnj2n21l1d96165';
+    const bannerId_wx = 'drnbifjl3ij4uobqt8';
+    const bannerId_tt = 'drnbifjl3ij4uobqt8';
+    const interstitialId_wx = "1qcmqpo0hd32npln2s";
+    const interstitialId_tt = "1qcmqpo0hd32npln2s";
+    const banner_refesh_interval = 10;
+    const banner_auto_refresh_time = 30;
+    const recordVideoTime = 600;
     class SdkUitl {
         static share(isRecord = false, succesCallback, failCallback) {
-            if (Laya.Browser.onWeiXin) {
-                wx.shareAppMessage && wx.shareAppMessage({
-                    title: "欢乐搬砖人"
-                });
-                return;
-            }
             if (Laya.Browser.window.tt) {
                 if (!tt.shareAppMessage) {
                     return;
                 }
                 let i = RandomUtil.RandomInteger(0, this.images.length);
-                let title = this.images[i]['des' + RandomUtil.RandomInteger(1, 4)];
-                let imageUrl = this.images[i].imageUrlId;
+                var r = Math.random();
+                let n = r < 0.25 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : 4;
+                let title = this.shareWords[n - 1];
+                let imageUrl = "subPackage/sub2/Share/" + String(n) + ".jpg";
                 if (!isRecord) {
                     tt.shareAppMessage({
                         title: title,
@@ -103,22 +456,24 @@
                     });
                 }
                 else {
-                    console.log(this._videoPath, "this.videoPath");
                     tt.shareAppMessage({
                         channel: "video",
                         title: title,
                         query: "",
                         templateId: templateId_tt,
                         extra: {
-                            videoPath: this._videoPath,
-                            videoTopics: ["动物经纪人"],
-                            hashtag_list: ["动物经纪人"]
+                            videoPath: this.videoPath,
+                            videoTopics: ["欢乐搬砖人"],
+                            hashtag_list: ["欢乐搬砖人"]
                         },
                         success: (res) => {
                             console.log("录屏发布成功", res);
+                            if (GameRecorderManager.instance().canShowReward()) {
+                                GameRecorderManager.instance().addRecordCount();
+                            }
                             if (succesCallback) {
                                 succesCallback();
-                                this._videoPath = "";
+                                this.videoPath = "";
                             }
                         },
                         fail: (res) => {
@@ -143,26 +498,27 @@
                 return;
             }
         }
-        static passiveShare() {
+        static passiveShare(withShareTicket = false) {
             if (Laya.Browser.onWeiXin) {
-                wx.showShareMenu && wx.showShareMenu({
-                    success: (res) => {
-                        console.log('开启被动转发成功!');
+                wx.showShareMenu({
+                    withShareTicket: withShareTicket,
+                    success: () => {
+                        wx.onShareAppMessage(() => {
+                            var r = Math.random();
+                            let n = r < 0.25 ? 1 : r < 0.5 ? 2 : r < 0.75 ? 3 : 4;
+                            return {
+                                title: this.shareWords[n - 1],
+                                imageUrl: "subPackage/sub2/Share/" + String(n) + ".jpg",
+                                query: "",
+                                success: () => {
+                                }
+                            };
+                        });
                     },
-                    fail: (res) => {
-                        console.log(res);
-                        console.log('开启被动转发失败!');
+                    fail: () => {
+                        console.log("显示当前页面的转发按钮--失败！");
                     }
                 });
-                wx.onShareAppMessage(function () {
-                    let i = RandomUtil.RandomInteger(0, this.images.length);
-                    var share = {
-                        title: this.images[i]['des' + RandomUtil.RandomInteger(1, 4)],
-                        imageUrlId: this.images[i].imageUrlId,
-                        imageUrl: this.images[i].imageUrl
-                    };
-                }.bind(this));
-                return;
             }
             if (Laya.Browser.window.tt) {
                 tt.showShareMenu && tt.showShareMenu({
@@ -186,35 +542,101 @@
                 if (!wx.createRewardedVideoAd) {
                     return;
                 }
-                let videoRewardAd = wx.createRewardedVideoAd({
+                this._videoRewardAd = wx.createRewardedVideoAd({
                     adUnitId: videoAdUnitId_wx
                 });
-                videoRewardAd.onLoad && videoRewardAd.onLoad(function (res) {
-                    console.log("视频广告加载完成", res.errMsg);
+                this._videoRewardAd.onLoad && this._videoRewardAd.onLoad(function (res) {
+                    console.log("视频广告加载完成", res);
                 });
-                videoRewardAd.onError && videoRewardAd.onError(function (res) {
-                    console.log("视频广告加载失败", res.errMsg);
-                    videoRewardAd.load && videoRewardAd.load();
+                this._videoRewardAd.onError && this._videoRewardAd.onError(function (res) {
+                    console.log("视频广告加载失败", res);
                 });
-                videoRewardAd.onClose && videoRewardAd.onClose(this.handler.bind(this));
+                this._videoRewardAd.onClose && this._videoRewardAd.onClose(this.handler.bind(this));
                 return;
             }
             if (Laya.Browser.window.tt) {
                 if (!tt.createRewardedVideoAd) {
                     return;
                 }
-                this._videoRewardAd = wx.createRewardedVideoAd({
+                this._videoRewardAd = tt.createRewardedVideoAd({
                     adUnitId: videoAdUnitId_tt
                 });
                 this._videoRewardAd.onLoad && this._videoRewardAd.onLoad(function (res) {
-                    console.log("视频广告加载完成", res.errMsg);
+                    console.log("视频广告加载完成", res);
                 });
                 this._videoRewardAd.onError && this._videoRewardAd.onError(function (res) {
-                    console.log("视频广告加载失败", res.errMsg);
-                    this._videoRewardAd.load && this._videoRewardAd.load();
+                    console.log("视频广告加载失败", res);
                 });
                 this._videoRewardAd.onClose && this._videoRewardAd.onClose(this.handler.bind(this));
             }
+        }
+        static loadVideoRewardAd() {
+            return new Promise((resolve, reject) => {
+                if (!this._videoRewardAd) {
+                    SdkUitl.createVideoRewardAd();
+                    resolve();
+                    return;
+                }
+                this._videoRewardAd.load().then(res => {
+                    SdkUitl.isRewardAdLoadComplete = true;
+                    console.log("reward load complete");
+                    resolve();
+                }, err => {
+                    console.log("reward load err", err);
+                    SdkUitl.isRewardAdLoadComplete = false;
+                    resolve();
+                });
+            });
+        }
+        static showVideoRewardAd(succesCallback, failCallback) {
+            return new Promise((resolve, reject) => {
+                if (Laya.Browser.onWeiXin) {
+                    this.setVideoRewardAdCloseEvent(succesCallback, failCallback);
+                    this.showVideo().then(res => {
+                        resolve();
+                    }, err => {
+                        reject();
+                    });
+                }
+                else if (Laya.Browser.window.tt) {
+                    this.setVideoRewardAdCloseEvent(succesCallback, failCallback);
+                    this.showVideo().then(res => {
+                        resolve();
+                    }, err => {
+                        reject();
+                    });
+                }
+                else {
+                    succesCallback();
+                    resolve();
+                }
+            });
+        }
+        static showVideo() {
+            return new Promise((resolve, reject) => {
+                if (!this._videoRewardAd) {
+                    SdkUitl.createVideoRewardAd();
+                    reject();
+                }
+                else {
+                    if (!this.isRewardAdLoadComplete) {
+                        SdkUitl.loadVideoRewardAd();
+                        reject();
+                        return;
+                    }
+                    this._videoRewardAd.show && this._videoRewardAd.show()
+                        .then(res => {
+                        console.log("视频广告显示成功，暂停背景音乐");
+                        resolve(this._videoRewardAd);
+                    }, err => {
+                        console.log("视频广告显示失败", err);
+                        SdkUitl.isRewardAdLoadComplete = false;
+                        SdkUitl.ShowToast("暂无广告，请稍后再试~");
+                        this._videoRewardAd.load();
+                        reject();
+                    });
+                }
+            });
         }
         static closeHandler(res) {
             if (res && res.isEnded || res === undefined) {
@@ -244,6 +666,226 @@
                 console.log("视频广告显示失败", err);
                 this._videoRewardAd.load();
             });
+        }
+        static showBanner() {
+            if (Laya.Browser.onWeiXin) {
+                if (!this.isBannerLoadComlete) {
+                    SdkUitl.createBanner().catch(e => {
+                        console.log("create banner err");
+                    });
+                    return;
+                }
+                if (this.banner_showCount >= banner_refesh_interval) {
+                    console.log("showBanner, 曝光次数达到设定值，需要重新创建再显示");
+                    SdkUitl.createBanner().then(res => {
+                    });
+                }
+                else {
+                    this.bannerAd && this.bannerAd.show && this.bannerAd.show().then(() => {
+                        this.isBannerDisplay = true;
+                        this.banner_showCount++;
+                    });
+                }
+            }
+            else if (Laya.Browser.window.tt) {
+                if (!this.isBannerLoadComlete) {
+                    SdkUitl.createBanner().catch(e => {
+                        console.log("create banner err");
+                    });
+                    return;
+                }
+                if (this.banner_showCount >= banner_refesh_interval) {
+                    console.log("showBanner, 曝光次数达到设定值，需要重新创建再显示");
+                    SdkUitl.createBanner().then(res => {
+                    });
+                }
+                else {
+                    this.bannerAd && this.bannerAd.show && this.bannerAd.show().then(() => {
+                        this.isBannerDisplay = true;
+                        this.banner_showCount++;
+                    });
+                }
+            }
+        }
+        static hideBanner() {
+            if (Laya.Browser.onWeiXin) {
+                if (this.isBannerDisplay) {
+                    this.isBannerDisplay = false;
+                    this.bannerAd && this.bannerAd.hide && this.bannerAd.hide();
+                }
+            }
+            else if (Laya.Browser.window.tt) {
+                if (this.isBannerDisplay) {
+                    this.isBannerDisplay = false;
+                    this.bannerAd && this.bannerAd.hide && this.bannerAd.hide();
+                }
+            }
+        }
+        static createBanner() {
+            return new Promise((resolve, reject) => {
+                if (Laya.Browser.onWeiXin) {
+                    if (wx.createBannerAd) {
+                        let info = wx.getSystemInfoSync(), i = info.screenWidth, o = info.screenHeight;
+                        let t = {
+                            adUnitId: bannerId_wx,
+                            adIntervals: banner_auto_refresh_time,
+                            style: {
+                                left: 0,
+                                top: 0
+                            }
+                        };
+                        SdkUitl.destoryBanner();
+                        this.bannerAd = wx.createBannerAd(t);
+                        this.bannerAd.style.left = (i - 200) / 2;
+                        this.bannerAd.onError((err) => {
+                            console.log("banner 加载失败", err);
+                            SdkUitl.destoryBanner();
+                            reject(err);
+                        });
+                        this.bannerAd.onLoad((res) => {
+                            console.log("banner 加载成功", res);
+                            this.isBannerLoadComlete = true;
+                            resolve();
+                        });
+                        this.bannerAd.onResize((res) => {
+                            if (this.isBannerResize) {
+                                return;
+                            }
+                            this.isBannerResize = true;
+                            if (res.height == 0) {
+                                res.height = 108;
+                            }
+                            if (o / i >= 2) {
+                                this.bannerAd.style.top = o - res.height;
+                                this.bannerAd.style.left = (i - res.width) / 2;
+                            }
+                            else {
+                                this.bannerAd.style.top = o - res.height;
+                                this.bannerAd.style.left = (i - res.width) / 2;
+                            }
+                        });
+                    }
+                }
+                else if (Laya.Browser.window.tt) {
+                    if (tt.createBannerAd) {
+                        let info = tt.getSystemInfoSync(), i = info.screenWidth, o = info.screenHeight;
+                        let t = {
+                            adUnitId: bannerId_tt,
+                            adIntervals: banner_auto_refresh_time,
+                            style: {
+                                left: 0,
+                                top: 0
+                            }
+                        };
+                        SdkUitl.destoryBanner();
+                        this.bannerAd = tt.createBannerAd(t);
+                        this.bannerAd.style.left = (i - 200) / 2;
+                        this.bannerAd.onError((err) => {
+                            console.log("banner 加载失败", err);
+                            SdkUitl.destoryBanner();
+                            reject(err);
+                        });
+                        this.bannerAd.onLoad((res) => {
+                            console.log("banner 加载成功", res);
+                            this.isBannerLoadComlete = true;
+                            resolve();
+                        });
+                        this.bannerAd.onResize((res) => {
+                            if (this.isBannerResize) {
+                                return;
+                            }
+                            this.isBannerResize = true;
+                            if (res.height == 0) {
+                                res.height = 108;
+                            }
+                            if (o / i >= 2) {
+                                this.bannerAd.style.top = o - res.height;
+                                this.bannerAd.style.left = (i - res.width) / 2;
+                            }
+                            else {
+                                this.bannerAd.style.top = o - res.height;
+                                this.bannerAd.style.left = (i - res.width) / 2;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        static destoryBanner() {
+            this.isBannerDisplay = false;
+            this.isBannerLoadComlete = false;
+            this.isBannerResize = false;
+            this.banner_showCount = 0;
+            if (this.bannerAd) {
+                if (this.bannerAd.destroy)
+                    this.bannerAd.destroy();
+                this.bannerAd = null;
+            }
+        }
+        static isLongHeight() {
+            if (!Laya.Browser.onWeiXin) {
+                return false;
+            }
+            if (Laya.Browser.window.tt) {
+                if (!this.systemInfo) {
+                    this.systemInfo = tt.getSystemInfoSync();
+                }
+                return this.systemInfo.screenHeight / this.systemInfo.screenWidth >= 2;
+            }
+            else {
+                if (!this.systemInfo) {
+                    this.systemInfo = wx.getSystemInfoSync();
+                }
+                return this.systemInfo.screenHeight / this.systemInfo.screenWidth >= 2;
+            }
+        }
+        static createInterstital(show = false) {
+            SdkUitl.destoryInterstitial();
+            this.interstitialAd = null;
+            if (Laya.Browser.window.tt) {
+                if (tt.createInterstitialAd) {
+                    let t = {
+                        adUnitId: interstitialId_tt
+                    };
+                    this.interstitialAd = tt.createInterstitialAd(t);
+                    this.interstitialAd && this.interstitialAd.load && this.interstitialAd.load().then(() => {
+                        console.log("interstitialAd 加载成功");
+                        if (show)
+                            this.interstitialAd && this.interstitialAd.show && this.interstitialAd.show().then(() => {
+                                console.log("interstitialAd显示成功");
+                            }).catch(err => {
+                                console.log("interstitialAd显示失败", err);
+                            });
+                    });
+                }
+                return;
+            }
+            if (Laya.Browser.onWeiXin) {
+                if (wx.createInterstitialAd) {
+                    let t = {
+                        adUnitId: interstitialId_tt
+                    };
+                    this.interstitialAd = wx.createInterstitialAd(t);
+                    this.interstitialAd && this.interstitialAd.load && this.interstitialAd.load().then(() => {
+                        console.log("interstitialAd 加载成功");
+                        if (show)
+                            this.interstitialAd && this.interstitialAd.show && this.interstitialAd.show().then(() => {
+                                console.log("interstitialAd显示成功");
+                            }).catch(err => {
+                                console.log("interstitialAd显示失败", err);
+                            });
+                    });
+                }
+            }
+        }
+        static showInterstitialAd() {
+            this.createInterstital(true);
+        }
+        static destoryInterstitial() {
+            if (this.interstitialAd) {
+                this.interstitialAd.destory && this.interstitialAd.destory();
+                this.interstitialAd = null;
+            }
         }
         static playMusic(name, loop = true) {
             if (Laya.Browser.onWeiXin) {
@@ -284,10 +926,29 @@
                     return task;
                 }
             }
-            callBack && callBack();
-            return null;
+            else if (Laya.Browser.window.tt) {
+                console.log("字节分包++++");
+                if (tt.loadSubpackage) {
+                    let task = tt.loadSubpackage({
+                        name: name,
+                        success: function (res) {
+                            callBack && callBack();
+                        },
+                        fail: function (res) {
+                        }
+                    });
+                    return task;
+                }
+            }
+            else {
+                callBack && callBack();
+                return null;
+            }
         }
         static vibrateShort() {
+            if (!AudioManager.instance().getVibrate()) {
+                return;
+            }
             if (Laya.Browser.onWeiXin) {
                 wx.vibrateShort && wx.vibrateShort({
                     type: "light"
@@ -299,10 +960,105 @@
                 return;
             }
         }
+        static ShowToast(title = "", icon = "none", duration = 1500) {
+            if (Laya.Browser.window.wx) {
+                wx.showToast({
+                    title: title,
+                    icon: icon,
+                    duration: duration,
+                });
+            }
+            else if (Laya.Browser.window.tt) {
+                tt.showToast({
+                    title: title,
+                    icon: icon,
+                    duration: duration,
+                });
+            }
+        }
+        static initGameRecorder() {
+            if (!Laya.Browser.window.tt) {
+                return;
+            }
+            if (!tt.getGameRecorderManager) {
+                return;
+            }
+            if (!this.gameRecorder) {
+                this.gameRecorder = tt.getGameRecorderManager();
+            }
+            this.gameRecorder.onStart((res) => {
+                console.log("开始录屏", res);
+                this.videoPath = "";
+                this.startGameRecorderTime = new Date().getTime();
+                SdkUitl.isGameRecordStop = false;
+            });
+            this.gameRecorder.onStop((res) => {
+                console.log("录制结束", res);
+                SdkUitl.isGameRecordStop = true;
+                this.endGameRecorderTime = new Date().getTime();
+                this.videoPath = res.videoPath;
+                let stopCallback = this.stopCallback;
+                let endCallback = this.stopEndCallback;
+                this.gameRecorder.clipVideo({
+                    path: res.videoPath,
+                    timeRange: [recordVideoTime, 0],
+                    success(res) {
+                        console.log(res.videoPath);
+                        stopCallback && stopCallback();
+                        endCallback && endCallback();
+                    },
+                    fail(e) {
+                        console.error(e);
+                        endCallback && endCallback();
+                    },
+                });
+            });
+        }
+        static startGameRecord() {
+            if (!Laya.Browser.window.tt) {
+                return;
+            }
+            if (this.gameRecorder) {
+                this.gameRecorder.start({
+                    duration: recordVideoTime
+                });
+            }
+        }
+        static stopGameRecord(callBack, endCallback) {
+            if (!Laya.Browser.window.tt) {
+                return;
+            }
+            if (this.isGameRecordStop) {
+                endCallback && endCallback();
+                return;
+            }
+            if (this.gameRecorder) {
+                this.stopCallback = callBack || null;
+                this.stopEndCallback = endCallback || null;
+                this.gameRecorder.stop();
+            }
+        }
+        static canReleaseGameRecord() {
+            if (!Laya.Browser.window.tt) {
+                return false;
+            }
+            if (this.endGameRecorderTime - this.startGameRecorderTime <= 3000 || this.videoPath == "" || !this.isGameRecordStop) {
+                SdkUitl.ShowToast("视频不足3秒无法发布，请重新录制！");
+                this.videoPath = "";
+                return false;
+            }
+            return true;
+        }
+        static releaseGameRecord(succesCallback, failCallback) {
+            if (!Laya.Browser.window.tt) {
+                return;
+            }
+            this.share(true, succesCallback, failCallback);
+        }
     }
     SdkUitl.images = [
         {
-            des1: '爆料！某主播带货竟强买强卖，快来看看~',
+            des1: '搬砖搬的好，躺平躺的快~',
             des2: '谁才是直播界带货一哥？',
             des3: '招募主播，直播带货，生意蒸蒸日上！',
             imageUrlId: 'M9YkQjdARgCfpupY+bmNWg==',
@@ -323,78 +1079,26 @@
             imageUrl: 'https://mmocgame.qpic.cn/wechatgame/svmLHWrwdtDVs2rjY0ZJKXlnhB8STMuHiaibI7C7iaSSvgjjHDmToalpa7uHzfiaKuibx/0'
         }
     ];
-    SdkUitl._videoPath = "";
+    SdkUitl.gameRecorder = null;
+    SdkUitl.videoPath = "";
+    SdkUitl.stopCallback = null;
+    SdkUitl.stopEndCallback = null;
+    SdkUitl.shareWords = ["搬砖搬的好，躺平躺的快~",
+        "打工人，打工魂，我是最强搬砖人！",
+        "还好我搬的砖多，不然就掉下去了！",
+        "宝~我今天扛了好多砖，但就是扛不住想你~"];
     SdkUitl.handler = SdkUitl.closeHandler;
+    SdkUitl.isRewardAdLoadComplete = false;
+    SdkUitl.banner_showCount = 0;
+    SdkUitl.isBannerDisplay = false;
+    SdkUitl.isBannerLoadComlete = false;
+    SdkUitl.isBannerResize = false;
+    SdkUitl.panelDisplayCount = 4;
     SdkUitl._audio = null;
-
-    class AudioManager {
-        constructor() {
-            this.audioInfo = null;
-        }
-        static instance() {
-            if (!this._instance) {
-                this._instance = new AudioManager();
-            }
-            return this._instance;
-        }
-        getAudioData() {
-            return this.audioInfo;
-        }
-        loadFromCache() {
-            const audioInfo = Configuration.instance().getConfigData(Constants.AudioConfigID);
-            if (audioInfo) {
-                this.audioInfo = JSON.parse(audioInfo);
-            }
-            else {
-                this._generateAudio();
-            }
-        }
-        saveAudioInfoToCache() {
-            const data = JSON.stringify(this.audioInfo);
-            Configuration.instance().setConfigData(Constants.AudioConfigID, data);
-        }
-        _generateAudio() {
-            this.audioInfo = {
-                musicMute: false,
-                effectMute: false,
-                musicVolume: 0.5,
-                effectVolume: 0.5
-            };
-            this.saveAudioInfoToCache();
-        }
-        playMusic(name) {
-            if (this.audioInfo && !this.audioInfo.musicMute) {
-                SdkUitl.playMusic(name, true);
-            }
-        }
-        resumeMusic() {
-            if (this.audioInfo && !this.audioInfo.musicMute) {
-            }
-        }
-        pasueMusic() {
-            if (this.audioInfo && !this.audioInfo.musicMute) {
-            }
-        }
-        stopMusic() {
-        }
-        setMusicVolume(volume) {
-        }
-        playEffect(name) {
-            if (this.audioInfo && !this.audioInfo.effectMute) {
-                const path = `subPackage/sub2/Audio/Effect/${name}.mp3`;
-                Laya.SoundManager.playSound(path);
-            }
-        }
-        stopAllEffects() {
-        }
-        setEffectVolume(volume) {
-        }
-    }
-    AudioManager._instance = null;
+    SdkUitl.isGameRecordStop = true;
 
     class GameData {
         static getArrivalPos() {
-            console.log(this.arrival_pos_array, "arrival pos array");
             if (this.arrival_pos_array.length <= 0) {
                 return null;
             }
@@ -408,6 +1112,7 @@
             this.rank = 1;
             this.playRank = 1;
             this.rewardCoin = 0;
+            this.rewardScore = 0;
             this.canRelife = true;
         }
         static RandomName() {
@@ -431,25 +1136,20 @@
             return name;
         }
     }
-    GameData.level = 1;
     GameData.maxLevel = 20;
     GameData.arrival_pos_array = [];
-    GameData.coin = 0;
-    GameData.isMoveEnd = false;
-    GameData.playerSkin_index = 0;
-    GameData.playerSkin_maxindex = 5;
-    GameData.playerSkinTex_array = [];
-    GameData.princessSkin_index = 0;
-    GameData.princessSkin_maxindex = 5;
     GameData.roadTex_map = new Map();
+    GameData.waterTex_map = new Map();
     GameData.isShake = true;
     GameData.isShowHome = false;
     GameData.name_array = [];
     GameData.canRelife = true;
     GameData.rank = 1;
     GameData.rewardCoin = 0;
+    GameData.rewardScore = 0;
     GameData.playRank = 1;
     GameData.playerInfos = [];
+    GameData.excited = false;
 
     class ES extends Laya.EventDispatcher {
         static get instance() {
@@ -571,10 +1271,16 @@
         onAwake() {
             super.onAwake();
             this._arrival = this.owner;
+            this._boom = this._arrival.getChildByName("boom");
+            EventManager.register(EventName.MINI_GAME_END, this._showBoom, this);
+        }
+        onDestroy() {
+            EventManager.unRegister(EventName.MINI_GAME_END, this._showBoom, this);
         }
         init(data) {
             super.init(data);
             this.setArrivalPosArray();
+            this._hideBoom();
         }
         setArrivalPosArray() {
             GameData.arrival_pos_array.length = 0;
@@ -591,83 +1297,17 @@
             pos_arr.push(pos_1);
             GameData.arrival_pos_array = pos_arr;
         }
+        _hideBoom() {
+            if (this._boom.active) {
+                this._boom.active = false;
+            }
+        }
+        _showBoom() {
+            if (!this._boom.active) {
+                this._boom.active = true;
+            }
+        }
     }
-
-    var GameState;
-    (function (GameState) {
-        GameState[GameState["None"] = 0] = "None";
-        GameState[GameState["Ready"] = 1] = "Ready";
-        GameState[GameState["PreviewMap"] = 2] = "PreviewMap";
-        GameState[GameState["Playing"] = 3] = "Playing";
-        GameState[GameState["Pause"] = 4] = "Pause";
-        GameState[GameState["Die"] = 5] = "Die";
-        GameState[GameState["End"] = 6] = "End";
-    })(GameState || (GameState = {}));
-    var CharacterState;
-    (function (CharacterState) {
-        CharacterState[CharacterState["None"] = 0] = "None";
-        CharacterState[CharacterState["Idle"] = 1] = "Idle";
-        CharacterState[CharacterState["Run"] = 2] = "Run";
-        CharacterState[CharacterState["Die"] = 3] = "Die";
-        CharacterState[CharacterState["Win"] = 4] = "Win";
-    })(CharacterState || (CharacterState = {}));
-    var CharacterAnimation;
-    (function (CharacterAnimation) {
-        CharacterAnimation["Idel"] = "idle";
-        CharacterAnimation["Running"] = "running";
-        CharacterAnimation["Falling"] = "falling";
-        CharacterAnimation["Escalade"] = "escalade";
-        CharacterAnimation["Back"] = "back";
-        CharacterAnimation["Carrying"] = "carrying";
-        CharacterAnimation["Jump"] = "jump";
-        CharacterAnimation["Planche"] = "planche";
-        CharacterAnimation["Defeated"] = "defeated";
-        CharacterAnimation["Dance"] = "dance";
-    })(CharacterAnimation || (CharacterAnimation = {}));
-    var EventName;
-    (function (EventName) {
-        EventName["MINI_GAME_START"] = "mini-game-start";
-        EventName["MINI_GAME_END"] = "mini-game-end";
-        EventName["MINI_GAME_DIE"] = "mini-game-die";
-        EventName["MINI_GAME_RELIFE"] = "mini-game-relife";
-        EventName["PLAYER_RELIFE"] = "player-relife";
-        EventName["ADD_MOENY"] = "add-money";
-        EventName["REDUCE_MOENY"] = "reduce-money";
-    })(EventName || (EventName = {}));
-    class GameDefine {
-    }
-    GameDefine.maxLevel = 4;
-    GameDefine.prefabRoot = 'subPackage/sub1/LayaScene_main/Conventional/';
-    GameDefine.levelRoot = 'subPackage/sub1/LayaScene_main/remote/levels/';
-    GameDefine.scenePath = "subPackage/sub1/LayaScene_main/Conventional/main.ls";
-    GameDefine.wordTexPath = 'subPackage/LayaScene_main/tex/';
-    GameDefine.soundPath = 'subPackage/LayaScene_main/sounds/';
-    GameDefine.roadTexPath = 'subPackage/sub1/RoadTextures/ground_';
-    GameDefine.dataPath = "data/";
-    GameDefine.preload = [
-        "character_base.lh",
-        "water.lh",
-        "plank_hand.lh",
-        "plank_road.lh",
-        "Turn_45_L.lh",
-        "Turn_45_R.lh",
-        "Turn_45_short_L.lh",
-        "Turn_45_short_R.lh",
-        "cube.lh",
-        "arrival.lh",
-        "fallEffect.lh",
-        "planks.lh",
-        "enemy.lh",
-        "Stright.lh",
-        "Cylinder.lh"
-    ];
-    GameDefine.sounds = [];
-    GameDefine.bgms = [
-        "bgm.mp3"
-    ];
-    GameDefine.gameState = GameState.None;
-    GameDefine.playerState = CharacterState.None;
-    GameDefine.CollisionGroup_Obs = Laya.Physics3DUtils.COLLISIONFILTERGROUP_CUSTOMFILTER3;
 
     class Camera extends Laya.Script3D {
         constructor() {
@@ -680,13 +1320,18 @@
             this._cameraPos = this._camera.transform.position.clone();
         }
         onEnable() {
+            EventManager.register(EventName.PLAYER_PLANK_CHANGE, this.changeCameraFieldOfView, this);
+            EventManager.register(EventName.MINI_GAME_END, this.changeCameraToFinal, this);
         }
         onDisable() {
+            EventManager.unRegister(EventName.PLAYER_PLANK_CHANGE, this.changeCameraFieldOfView, this);
+            EventManager.unRegister(EventName.MINI_GAME_END, this.changeCameraToFinal, this);
         }
         initPlayerData(player, point) {
             this._target = player;
             this._point = point;
             this._start_moving = false;
+            this._camera.fieldOfView = 50;
         }
         onLateUpdate() {
             if (Laya.timer.delta > 100) {
@@ -712,8 +1357,22 @@
                 return;
             }
             this._start_moving = true;
+            Laya.Tween.clearAll(this._camera);
+            Laya.Tween.to(this._camera, { fieldOfView: 40 }, 500, Laya.Ease.linearIn);
             Laya.Tween.to(point.transform, { localPositionZ: -10, localPositionY: 5 }, 1000, null, Laya.Handler.create(this, () => {
             }));
+        }
+        changeCameraFieldOfView(count) {
+            Laya.Tween.clearAll(this._camera);
+            let fie = 45 + count / 2;
+            if (fie > 80) {
+                fie = 80;
+            }
+            Laya.Tween.to(this._camera, { fieldOfView: fie }, 200, Laya.Ease.linearIn);
+        }
+        changeCameraToFinal() {
+            Laya.Tween.clearAll(this._camera);
+            Laya.Tween.to(this._camera, { fieldOfView: 40 }, 1500, Laya.Ease.linearIn);
         }
     }
     Camera.instance = null;
@@ -769,40 +1428,6 @@
         }
     }
 
-    class EventManager {
-        static register(eventName, cb, target) {
-            if (!this.handle[eventName]) {
-                this.handle[eventName] = [];
-            }
-            const data = { func: cb, target };
-            this.handle[eventName].push(data);
-        }
-        static unRegister(eventName, cb, target) {
-            const list = this.handle[eventName];
-            if (!list || list.length <= 0) {
-                return;
-            }
-            for (let i = 0; i < list.length; i++) {
-                const event = list[i];
-                if (event.func === cb && (!target || target === event.target)) {
-                    list.splice(i, 1);
-                    break;
-                }
-            }
-        }
-        static dispatchEvent(eventName, ...args) {
-            const list = this.handle[eventName];
-            if (!list || list.length <= 0) {
-                return;
-            }
-            for (let i = 0; i < list.length; i++) {
-                const event = list[i];
-                event.func.apply(event.target, args);
-            }
-        }
-    }
-    EventManager.handle = {};
-
     class Pool {
         constructor() {
             this.plankHand_array = [];
@@ -814,6 +1439,31 @@
             if (!this._instance)
                 this._instance = new Pool();
             return this._instance;
+        }
+        static Spawn(name, parent, pos) {
+            let obj;
+            if (this.handle.has(name) && this.handle.get(name).length > 0) {
+                obj = this.handle.get(name).pop();
+                parent.addChild(obj);
+            }
+            else {
+                let prefab = Laya.loader.getRes(GameDefine.prefabRoot + name + ".lh");
+                obj = Laya.Sprite3D.instantiate(prefab, parent, true);
+            }
+            obj.transform.position = pos;
+            obj.active = true;
+            return obj;
+        }
+        static RecycleObj(target, name) {
+            target.removeSelf();
+            if (this.handle.has(name)) {
+                this.handle.get(name).push(target);
+            }
+            else {
+                let pool = [];
+                pool.push(target);
+                this.handle.set(name, pool);
+            }
         }
         getPlank_hand(parent, pos) {
             let cube;
@@ -874,6 +1524,117 @@
             this.plankRoad_array.length = 0;
             ;
         }
+        static getCoin(coinPrefab, parent) {
+            var obj = null;
+            if (this.coinPool.length > 0) {
+                obj = this.coinPool.pop();
+            }
+            else {
+                obj = coinPrefab.create();
+            }
+            parent.addChild(obj);
+            return obj;
+        }
+        static putCoin(obj) {
+            Laya.Tween.clearAll(obj);
+            obj.removeSelf();
+            this.coinPool.push(obj);
+        }
+    }
+    Pool.handle = new Map();
+    Pool.coinPool = [];
+
+    var Planks = {
+        "Planks": [
+            {
+                "1001": {
+                    "ID": 1001,
+                    "Name": "绿色默认",
+                    "SpriteName": "default",
+                    "Prefab": "plank_hand_default",
+                    "Price": 0,
+                    "Ad": 0
+                },
+                "1002": {
+                    "ID": 1002,
+                    "Name": "热狗",
+                    "SpriteName": "hotdog",
+                    "Prefab": "plank_hand_hotdog",
+                    "Price": 1000,
+                    "Ad": 0
+                },
+                "1003": {
+                    "ID": 1003,
+                    "Name": "饼干",
+                    "SpriteName": "biscuit",
+                    "Prefab": "plank_hand_biscuit",
+                    "Price": 3000,
+                    "Ad": 0
+                },
+                "1004": {
+                    "ID": 1004,
+                    "Name": "钞票",
+                    "SpriteName": "bills",
+                    "Prefab": "plank_hand_bills",
+                    "Price": 3000,
+                    "Ad": 0
+                },
+                "1005": {
+                    "ID": 1005,
+                    "Name": "黄金",
+                    "SpriteName": "gold",
+                    "Prefab": "plank_hand_gold",
+                    "Price": 8000,
+                    "Ad": 0
+                },
+                "1006": {
+                    "ID": 1006,
+                    "Name": "花",
+                    "SpriteName": "flower",
+                    "Prefab": "plank_hand_flower",
+                    "Price": 12000,
+                    "Ad": 0
+                },
+                "1007": {
+                    "ID": 1007,
+                    "Name": "披萨",
+                    "SpriteName": "pizza",
+                    "Prefab": "plank_hand_pizza",
+                    "Price": 12000,
+                    "Ad": 0
+                },
+                "1008": {
+                    "ID": 1008,
+                    "Name": "滑板",
+                    "SpriteName": "overboard",
+                    "Prefab": "plank_hand_overboard",
+                    "Price": 0,
+                    "Ad": 3
+                },
+                "1009": {
+                    "ID": 1009,
+                    "Name": "盾牌",
+                    "SpriteName": "diskstar",
+                    "Prefab": "plank_hand_diskstar",
+                    "Price": 0,
+                    "Ad": 3
+                }
+            }
+        ]
+    };
+
+    class StaticDataManager {
+        static getPlanksRecord(id) {
+            let plankTmpl = Planks["Planks"]["0"];
+            if (!plankTmpl) {
+                console.trace();
+                return;
+            }
+            if (id) {
+                return plankTmpl[id];
+            }
+            return plankTmpl;
+        }
     }
 
     class Charactor extends Obj {
@@ -901,6 +1662,7 @@
         }
     }
 
+    const speed = 0.15;
     class Enemy extends Charactor {
         constructor() {
             super();
@@ -911,11 +1673,17 @@
             this._toArrival = false;
             this._final = false;
             this._toRight = false;
+            this.targetArray = [];
+            this.targetIndex = 1;
+            this._toTarget = false;
+            this._temp_vec3 = new Laya.Vector3(0, 0, 0);
+            this._forward = new Laya.Vector3(0, 0, 0);
             this.qua = new Laya.Quaternion();
         }
         onAwake() {
             super.onAwake();
             this.player = this.owner;
+            this.trail = this.player.getChildByName("trail");
             this.animator = this.player.getComponent(Laya.Animator);
             this.blank_point = this.player.getChildByName("plank_point");
             this._left = this.player.getChildByName("left");
@@ -934,6 +1702,7 @@
                 player: false
             };
             GameData.playerInfos.push(this.playerInfo);
+            this._hideTrail();
         }
         onEnable() {
             EventManager.register(EventName.MINI_GAME_START, this.onGameStart, this);
@@ -951,6 +1720,13 @@
             this._die = false;
             this._toArrival = false;
             this._final = false;
+            this.path_array = data.pathArray;
+            if (this.path_array) {
+                for (let i = 0; i < this.path_array.length; i++) {
+                    let vec = new Laya.Vector3().fromArray(this.path_array[i]);
+                    this.targetArray.push(vec);
+                }
+            }
         }
         onUpdate() {
             if (Laya.timer.delta > 100) {
@@ -968,8 +1744,18 @@
             this.rayCast();
             switch (this.animationState) {
                 case CharacterAnimation.Planche:
+                    this._showTrail();
+                    this._addSpeed();
+                    this._moveForward();
+                    if (this.player.transform.localPositionY < 0) {
+                        this.player.transform.localPositionY = 0;
+                    }
+                    break;
                 case CharacterAnimation.Carrying:
                 case CharacterAnimation.Running:
+                    this._hideTrail();
+                    this.forward_speed = speed;
+                    this.playerMove.setValue(0, 0, this.forward_speed);
                     this._moveForward();
                     if (this.player.transform.localPositionY < 0) {
                         this.player.transform.localPositionY = 0;
@@ -994,8 +1780,15 @@
             }
         }
         onGameStart() {
+            this._die = false;
+            this._toArrival = false;
+            this._final = false;
+            this._toRight = false;
+            this.setPlankPrefab();
+            this.forward_speed = speed;
             this.changePlayerState(CharacterAnimation.Running);
             this.startRay();
+            this._hideTrail();
         }
         onGameEnd() {
             if (this._final) {
@@ -1030,6 +1823,10 @@
             if (this.physicsSimulation.rayCast(this.ray_down, this.outInfo, 20)) {
                 this.refreshState(this.outInfo, this.animationState);
             }
+            if (this._toTarget && this.targetPos) {
+                this.player.transform.lookAt(this.targetPos, Laya.Vector3.up, false, false);
+                return;
+            }
             if (this._toArrival) {
                 this.player.transform.lookAt(GameData.arrival_pos, Laya.Vector3.up, false, false);
                 return;
@@ -1058,6 +1855,7 @@
             let point = outInfo.point;
             switch (state) {
                 case CharacterAnimation.Planche:
+                    this._showTrail();
                     switch (colliderName) {
                         case "arrival":
                             this._moveArrivalPoint(this.outInfo.collider.owner);
@@ -1071,16 +1869,13 @@
                                 this.changePlayerState(CharacterAnimation.Jump);
                             }
                             break;
+                        case "Cylinder":
                         case "Turn_45_L":
                         case "Turn_45_R":
                         case "Turn_45_short_L":
                         case "Turn_45_short_R":
-                        case "Cylinder":
                         case "Stright":
                         case "plank":
-                            if (this._toArrival) {
-                                this._toArrival = false;
-                            }
                             if (!this._toRight) {
                                 this._toRight = true;
                                 this._part = this.outInfo.collider.owner;
@@ -1091,11 +1886,18 @@
                             else {
                                 this.changePlayerState(CharacterAnimation.Running);
                             }
+                            if (this._toArrival) {
+                                this._toArrival = false;
+                            }
+                            this._rotateToRight();
                             break;
                     }
                     break;
                 case CharacterAnimation.Carrying:
                 case CharacterAnimation.Running:
+                    this._hideTrail();
+                    this.forward_speed = speed;
+                    this.playerMove.setValue(0, 0, this.forward_speed);
                     switch (colliderName) {
                         case "arrival":
                             this._moveArrivalPoint(this.outInfo.collider.owner);
@@ -1114,6 +1916,8 @@
                             this.changePlayerState(CharacterAnimation.Carrying);
                             let plank = outInfo.collider.owner;
                             plank.removeSelf();
+                            break;
+                        default:
                             break;
                     }
                     break;
@@ -1139,15 +1943,21 @@
                                     this._toRight = true;
                                     this._part = this.outInfo.collider.owner;
                                 }
+                                if (this._toArrival) {
+                                    this._toArrival = false;
+                                }
+                                this._rotateToRight();
                                 this.changePlayerState(CharacterAnimation.Running);
                                 if (this.player.transform.localPositionY < 0) {
                                     this.player.transform.localPositionY = 0;
                                 }
                             }
                             break;
-                        case "plank_road":
-                            if (this.juageBlankDistance(point)) {
-                                this.changePlayerState(CharacterAnimation.Running);
+                        default:
+                            if (colliderName.substring(0, 10) == "plank_hand") {
+                                if (this.juageBlankDistance(point)) {
+                                    this.changePlayerState(CharacterAnimation.Running);
+                                }
                             }
                             break;
                     }
@@ -1168,7 +1978,7 @@
             if (this._toArrival) {
                 return;
             }
-            if (this.cube_count > RandomUtil.RandomInteger(14, 18)) {
+            if (this.cube_count > RandomUtil.RandomInteger(12, 16)) {
                 this._toArrival = true;
                 Laya.timer.once(1000, this, () => {
                     this._toArrival = false;
@@ -1231,7 +2041,8 @@
             if (!target) {
                 return;
             }
-            this.player.transform.lookAt(target.transform.position.clone(), Laya.Vector3.up, false, false);
+            let targetVec = new Laya.Vector3(target.transform.position.x, 0, target.transform.position.z);
+            this.player.transform.lookAt(targetVec, Laya.Vector3.up, false, false);
         }
         _moveForward() {
             this.player.transform.translate(this.playerMove, true);
@@ -1284,14 +2095,35 @@
             else {
                 pos = this.blank_point.transform.position.clone();
             }
-            let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+            let cube = Pool.Spawn(this._plank_prefab, this.blank_point, pos);
             let animator = cube.getComponent(Laya.Animator);
+            animator.enabled = true;
             animator.play("blank_push");
+            let coll = cube.getComponent(Laya.PhysicsCollider);
+            coll.enabled = false;
             let target_y = cube.transform.localPositionY + 0.2;
             Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
             cube.transform.rotation = this.blank_point.transform.rotation;
             this.cube_array.push(cube);
+            if (this.path_array)
+                if (this.path_array && this.targetIndex < this.targetArray.length) {
+                    this._jungeToTarget();
+                    return;
+                }
             this.juageToArrival();
+        }
+        _jungeToTarget() {
+            if (this._toTarget) {
+                return;
+            }
+            if (this.cube_count > RandomUtil.RandomInteger(6, 7)) {
+                this._toTarget = true;
+                this.targetPos = this.targetArray[this.targetIndex];
+                Laya.timer.once(1000, this, () => {
+                    this.targetIndex++;
+                    this._toTarget = false;
+                });
+            }
         }
         _popPlankToRoad() {
             if (!this._canPop) {
@@ -1302,14 +2134,24 @@
             }
             let cube = this.cube_array.pop();
             this.cube_count--;
-            Pool.instance.reversePlankHandCube(cube);
-            let plankRoad = Pool.instance.getPlank_road(GameData.map, this.player.transform.position.clone());
+            Pool.RecycleObj(cube, this._plank_prefab);
+            let plankRoad = Pool.Spawn(this._plank_prefab, GameData.map, this.player.transform.position.clone());
             plankRoad.transform.rotation = this.player.transform.rotation.clone();
             plankRoad.transform.setWorldLossyScale(Laya.Vector3.one);
+            let animator = plankRoad.getComponent(Laya.Animator);
+            animator.enabled = false;
+            let coll = plankRoad.getComponent(Laya.PhysicsCollider);
+            coll.enabled = true;
             this._canPop = false;
             Laya.timer.once(200, this, () => {
                 this._canPop = true;
             });
+        }
+        _addSpeed() {
+            if (this.forward_speed < speed + 0.15) {
+                this.forward_speed += Laya.timer.delta / 1000 * 0.01;
+                this.playerMove.setValue(0, 0, this.forward_speed);
+            }
         }
         _clearPlank() {
             Laya.timer.frameLoop(1, this.player, () => {
@@ -1319,7 +2161,7 @@
                 }
                 let cube = this.cube_array.pop();
                 this.cube_count--;
-                Pool.instance.reversePlankHandCube(cube);
+                Pool.RecycleObj(cube, this._plank_prefab);
             });
         }
         _moveArrivalPoint(arrival) {
@@ -1330,6 +2172,7 @@
                 return;
             }
             this._clearPlank();
+            this._hideTrail();
             this.changePlayerState(CharacterAnimation.Running);
             let pos = GameData.getArrivalPos();
             this._isMoveArrival = true;
@@ -1354,61 +2197,252 @@
                 this.changePlayerState(CharacterAnimation.Defeated);
             }
         }
+        setPlankPrefab() {
+            let tmpls = StaticDataManager.getPlanksRecord();
+            let keys = Object.keys(tmpls);
+            this._plank_prefab = tmpls[keys[Math.floor(Math.random() * keys.length)]].Prefab;
+        }
+        _showTrail() {
+            if (!this.trail.active) {
+                this.trail.active = true;
+            }
+        }
+        _hideTrail() {
+            if (this.trail.active) {
+                this.trail.active = false;
+            }
+        }
     }
 
-    class MiniGameManager {
+    class Jumper extends Obj {
+        onAwake() {
+            super.onAwake();
+            this._jumper = this.owner;
+            this._arrow = this._jumper.getChildByName("arrow");
+            this._jumperAnimater = this._jumper.getChildByName("jumper.001").getChildAt(0).getComponent(Laya.Animator);
+        }
+        playJumpAni() {
+            this._jumperAnimater.play();
+            AudioManager.instance().playEffect("Jumper");
+        }
+    }
+
+    var PlayerTitle;
+    (function (PlayerTitle) {
+        PlayerTitle["QINGTONG"] = "\u642C\u7816\u9752\u94DC";
+        PlayerTitle["BAIYING"] = "\u642C\u7816\u767D\u94F6";
+        PlayerTitle["HUANGJING"] = "\u642C\u7816\u9EC4\u91D1";
+        PlayerTitle["BOJING"] = "\u642C\u7816\u94C2\u91D1";
+        PlayerTitle["ZHUANSHI"] = "\u642C\u7816\u7816\u77F3";
+        PlayerTitle["DASHI"] = "\u642C\u7816\u5927\u5E08";
+        PlayerTitle["WANGZHE"] = "\u642C\u7816\u738B\u8005";
+    })(PlayerTitle || (PlayerTitle = {}));
+    class CharactorManager {
+        constructor() {
+            this.playerTitle = PlayerTitle.HUANGJING;
+        }
         static instance() {
             if (!this._instance) {
-                this._instance = new MiniGameManager();
+                this._instance = new CharactorManager();
             }
             return this._instance;
         }
-        StartGame() {
-            GameDefine.gameState = GameState.Playing;
-            EventManager.dispatchEvent(EventName.MINI_GAME_START);
-        }
-        EndGame() {
-            GameDefine.gameState = GameState.End;
-            EventManager.dispatchEvent(EventName.MINI_GAME_END);
-        }
-        PauseGame() {
-            GameDefine.gameState = GameState.Pause;
-            EventManager.dispatchEvent(EventName.MINI_GAME_RELIFE);
-        }
-        ResumeGame() {
-            GameDefine.gameState = GameState.Playing;
-        }
-        DieGame() {
-            GameDefine.gameState = GameState.Die;
-            EventManager.dispatchEvent(EventName.MINI_GAME_DIE);
-        }
-        getRewardCoinCount(rank) {
-            switch (rank) {
-                case 1:
-                    return 900;
-                case 2:
-                    return 500;
-                case 3:
-                    return 120;
-                case 4:
-                    return 15;
+        loadFromCache() {
+            const playerInfo = Configuration.instance().getConfigData(Constants.PlayerInfoID);
+            console.log(playerInfo, "playerINfo++++++++++");
+            if (playerInfo) {
+                this.playerInfo = JSON.parse(playerInfo);
+                if (!this.playerInfo.score) {
+                    this.playerInfo.score = 0;
+                }
+            }
+            else {
+                this.playerInfo = {
+                    money: 0,
+                    score: 0
+                };
             }
         }
+        savePlayerInfoToCache() {
+            const data = JSON.stringify(this.playerInfo);
+            Configuration.instance().setConfigData(Constants.PlayerInfoID, data);
+        }
+        addMoney(money, delay = false) {
+            this.playerInfo.money += money;
+            this.savePlayerInfoToCache();
+            if (!delay) {
+                EventManager.dispatchEvent(EventName.ADD_MOENY);
+            }
+        }
+        reduceMoney(money) {
+            if (this.playerInfo.money >= money) {
+                this.playerInfo.money -= money;
+                this.savePlayerInfoToCache();
+                EventManager.dispatchEvent(EventName.REDUCE_MOENY);
+                return true;
+            }
+            return false;
+        }
+        addScore(score) {
+            this.playerInfo.score += score;
+            this.savePlayerInfoToCache();
+            EventManager.dispatchEvent(EventName.ADD_SCORE);
+        }
+        setPlayerTitle() {
+            let score = this.playerInfo.score;
+            if (score < 15) {
+                this.playerTitle = PlayerTitle.QINGTONG;
+            }
+            else if (score >= 15 && score < 40) {
+                if (this.playerTitle != PlayerTitle.BAIYING) {
+                    this.playerTitle = PlayerTitle.BAIYING;
+                    EventManager.dispatchEvent(EventName.CHANGE_TITLE);
+                }
+            }
+            else if (score >= 40 && score < 80) {
+                if (this.playerTitle != PlayerTitle.HUANGJING) {
+                    this.playerTitle = PlayerTitle.HUANGJING;
+                    EventManager.dispatchEvent(EventName.CHANGE_TITLE);
+                }
+            }
+            else if (score >= 80 && score < 140) {
+                if (this.playerTitle != PlayerTitle.BOJING) {
+                    this.playerTitle = PlayerTitle.BOJING;
+                    EventManager.dispatchEvent(EventName.CHANGE_TITLE);
+                }
+            }
+            else if (score >= 140 && score < 200) {
+                if (this.playerTitle != PlayerTitle.DASHI) {
+                    this.playerTitle = PlayerTitle.DASHI;
+                    EventManager.dispatchEvent(EventName.CHANGE_TITLE);
+                }
+            }
+            else {
+                if (this.playerTitle != PlayerTitle.WANGZHE) {
+                    this.playerTitle = PlayerTitle.WANGZHE;
+                    EventManager.dispatchEvent(EventName.CHANGE_TITLE);
+                }
+            }
+        }
+        getPlayerTitle() {
+            return this.playerTitle;
+        }
     }
-    MiniGameManager._instance = null;
+    CharactorManager._instance = null;
 
+    class ShopManager {
+        constructor() {
+            this._unlockIDMap = new Map();
+            this._unlockIDSaveList = [];
+        }
+        static instance() {
+            if (!this._instance) {
+                this._instance = new ShopManager();
+            }
+            return this._instance;
+        }
+        loadFromCache() {
+            const shopInfo = Configuration.instance().getConfigData(Constants.ShopInfoID);
+            const chooseID = Configuration.instance().getConfigData(Constants.PlankChooseID);
+            if (chooseID) {
+                this._unPlankChooseID = JSON.parse(chooseID);
+            }
+            if (shopInfo) {
+                this._unlockIDSaveList = JSON.parse(shopInfo);
+            }
+            else {
+                this._unlockIDSaveList.push("1001");
+                this._unPlankChooseID = "1001";
+                this._savePlankChooseID(this._unPlankChooseID);
+                this._savePlankListToCache();
+            }
+            for (let i = 0; i < this._unlockIDSaveList.length; i++) {
+                if (!this._unlockIDMap.has(this._unlockIDSaveList[i])) {
+                    this._unlockIDMap.set(this._unlockIDSaveList[i], true);
+                }
+            }
+        }
+        _savePlankListToCache() {
+            const data = JSON.stringify(this._unlockIDSaveList);
+            Configuration.instance().setConfigData(Constants.ShopInfoID, data);
+        }
+        _savePlankChooseID(id) {
+            this._unPlankChooseID = id;
+            Configuration.instance().setConfigData(Constants.PlankChooseID, this._unPlankChooseID);
+        }
+        getUnlockCount() {
+            return this._unlockIDSaveList.length;
+        }
+        isAllUnlock() {
+            return this._unlockIDSaveList.length >= 9;
+        }
+        isAllPlankUnlock() {
+            return this._unlockIDSaveList.length >= Constants.MaxPlankSkin;
+        }
+        unlockPlankByMoney() {
+            let unlockMoney = this._unlockIDSaveList.length * 1500;
+            if (CharactorManager.instance().reduceMoney(unlockMoney)) {
+                let lockList = this.getLockIDList();
+                let ranIndex = Math.floor(Math.random() * lockList.length);
+                this.unlockPlank(lockList[ranIndex]);
+                EventManager.dispatchEvent(EventName.SHOP_PLANK_BUY, lockList[ranIndex]);
+            }
+            else {
+                SdkUitl.ShowToast("金币数量不够~");
+            }
+        }
+        hasUnlock(id) {
+            return this._unlockIDMap.has(id);
+        }
+        unlockPlank(id) {
+            if (!this._unlockIDMap.has(id)) {
+                this._unlockIDSaveList.push(id);
+                this._unlockIDMap.set(id, true);
+                this._savePlankListToCache();
+                this._savePlankChooseID(id);
+            }
+        }
+        choosePlank(id) {
+            if (!this._unlockIDMap.has(id)) {
+                return;
+            }
+            this._savePlankChooseID(id);
+            EventManager.dispatchEvent(EventName.SHOP_PLANK_CHOOSE, id);
+        }
+        getChoosePlankID() {
+            return this._unPlankChooseID;
+        }
+        getLockIDList() {
+            let tmpls = StaticDataManager.getPlanksRecord();
+            let lockList = [];
+            for (let key in tmpls) {
+                if (!this._unlockIDMap.has(key)) {
+                    lockList.push(key);
+                }
+            }
+            return lockList;
+        }
+    }
+    ShopManager._instance = null;
+
+    const speed$1 = 0.15;
     class Player extends Charactor {
         constructor() {
             super();
-            this._rotate_speed = 0.35;
+            this._rotate_speed = 0.25;
             this.fingerMoveDistance_x = 0;
             this.isMouseDown = false;
             this._canPop = true;
             this._isMoveArrival = false;
+            this._excitedTimer = -1;
+            this._bigJump = false;
+            this._jumpInitSpeed = 1.5;
+            this._bigJmmpG = 0.0015;
         }
         onAwake() {
             super.onAwake();
             this.player = this.owner;
+            this.trail = this.player.getChildByName("trail");
             this._point = this.player.getChildByName("point");
             this.blank_point = this.player.getChildByName("plank_point");
             this.animator = this.player.getComponent(Laya.Animator);
@@ -1430,6 +2464,7 @@
                 player: true
             };
             GameData.playerInfos.push(this.playerInfo);
+            this._hideTrail();
         }
         onEnable() {
             EventManager.register(EventName.MINI_GAME_START, this.onGameStart, this);
@@ -1489,6 +2524,8 @@
             this.rayCast();
             switch (this.animationState) {
                 case CharacterAnimation.Planche:
+                    this._showTrail();
+                    this._addSpeed();
                     this._moveForward();
                     if (this.player.transform.localPositionY < 0) {
                         this.player.transform.localPositionY = 0;
@@ -1496,6 +2533,11 @@
                     break;
                 case CharacterAnimation.Carrying:
                 case CharacterAnimation.Running:
+                    this._hideTrail();
+                    if (!GameData.excited) {
+                        this.forward_speed = speed$1;
+                        this.playerMove.setValue(0, 0, this.forward_speed);
+                    }
                     this._moveForward();
                     if (this.player.transform.localPositionY < 0) {
                         this.player.transform.localPositionY = 0;
@@ -1506,6 +2548,27 @@
                     this._moveForward();
                     if (this.juageWaterDistance()) {
                         AudioManager.instance().playEffect("FallInWater");
+                        this.clearExcited();
+                        let pos = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
+                        EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
+                            res.active = true;
+                        });
+                        if (GameData.canRelife) {
+                            GameData.canRelife = false;
+                            MiniGameManager.instance().PauseGame();
+                        }
+                        else {
+                            MiniGameManager.instance().DieGame();
+                        }
+                    }
+                    break;
+                case CharacterAnimation.BigJump:
+                    this._bigJumpSpeed -= this._bigJmmpG * Laya.timer.delta;
+                    this.playerMove.y = this._bigJumpSpeed;
+                    this._moveForward();
+                    if (this.juageWaterDistance() && this.cube_count <= 0) {
+                        AudioManager.instance().playEffect("FallInWater");
+                        this.clearExcited();
                         let pos = new Laya.Vector3(this.player.transform.position.x, -0.5, this.player.transform.position.z);
                         EffectUtil.instance.loadEffect("fallEffect", -1, pos).then(res => {
                             res.active = true;
@@ -1559,6 +2622,10 @@
                 case CharacterAnimation.Idel:
                     this.playerMove.setValue(0, 0, 0);
                     break;
+                case CharacterAnimation.BigJump:
+                    this._bigJumpSpeed = this._jumpInitSpeed;
+                    this.playerMove.setValue(0, this._bigJumpSpeed, this.forward_speed);
+                    break;
                 default:
                     break;
             }
@@ -1571,11 +2638,20 @@
             else {
                 this.animator.speed = 1;
             }
+            if (state == CharacterAnimation.BigJump) {
+                state = CharacterAnimation.Carrying;
+            }
             this.animator.play(state);
         }
         onGameStart() {
-            this.changePlayerState(CharacterAnimation.Running);
+            this.forward_speed = speed$1;
+            this.setHandPrefab();
             this.startRay();
+            this._hideTrail();
+            if (GameData.excited) {
+                this.startExcited();
+            }
+            this.changePlayerState(CharacterAnimation.Running);
         }
         onGameEnd() {
             this.changePlayerState(CharacterAnimation.Falling);
@@ -1623,12 +2699,25 @@
             switch (state) {
                 case CharacterAnimation.Planche:
                     switch (colliderName) {
+                        case "jumper":
+                            if (!this._bigJump) {
+                                this._bigJump = true;
+                                Laya.timer.once(1000, this, () => {
+                                    this._bigJump = false;
+                                });
+                            }
+                            this.changePlayerState(CharacterAnimation.BigJump);
+                            let jumper = this.outInfo.collider.owner;
+                            let ins = jumper.getComponent(Jumper);
+                            if (ins) {
+                                ins.playJumpAni();
+                            }
+                            break;
                         case "arrival":
                             this._moveArrivalPoint(this.outInfo.collider.owner);
                             break;
                         case "water":
                             if (this.cube_count > 0) {
-                                console.log("pop blank");
                                 this._popPlankToRoad();
                                 this.changePlayerState(CharacterAnimation.Planche);
                             }
@@ -1656,6 +2745,20 @@
                 case CharacterAnimation.Carrying:
                 case CharacterAnimation.Running:
                     switch (colliderName) {
+                        case "jumper":
+                            if (!this._bigJump) {
+                                this._bigJump = true;
+                                Laya.timer.once(1000, this, () => {
+                                    this._bigJump = false;
+                                });
+                            }
+                            this.changePlayerState(CharacterAnimation.BigJump);
+                            let jumper = this.outInfo.collider.owner;
+                            let ins = jumper.getComponent(Jumper);
+                            if (ins) {
+                                ins.playJumpAni();
+                            }
+                            break;
                         case "arrival":
                             this._moveArrivalPoint(this.outInfo.collider.owner);
                             break;
@@ -1678,11 +2781,56 @@
                             break;
                     }
                     break;
+                case CharacterAnimation.BigJump:
+                    if (this._bigJump) {
+                        return;
+                    }
+                    switch (colliderName) {
+                        case "water":
+                            if (this.player.transform.localPositionY < 0 && this.cube_count > 0) {
+                                this.player.transform.localPositionY = 0;
+                                this.changePlayerState(CharacterAnimation.Planche);
+                                return;
+                            }
+                        case "plank":
+                        case "Turn_45_L":
+                        case "Turn_45_R":
+                        case "Turn_45_short_L":
+                        case "Turn_45_short_R":
+                        case "Cylinder":
+                        case "Stright":
+                            if (this.juageRoadDistance()) {
+                                if (this.cube_count > 0) {
+                                    this.changePlayerState(CharacterAnimation.Planche);
+                                }
+                                else {
+                                    this.changePlayerState(CharacterAnimation.Running);
+                                }
+                                if (this.player.transform.localPositionY < 0) {
+                                    this.player.transform.localPositionY = 0;
+                                }
+                                return;
+                            }
+                    }
                 case CharacterAnimation.Jump:
                     switch (colliderName) {
+                        case "jumper":
+                            if (!this._bigJump) {
+                                this._bigJump = true;
+                                Laya.timer.once(1000, this, () => {
+                                    this._bigJump = false;
+                                });
+                            }
+                            this.changePlayerState(CharacterAnimation.BigJump);
+                            let jumper = this.outInfo.collider.owner;
+                            let ins = jumper.getComponent(Jumper);
+                            if (ins) {
+                                ins.playJumpAni();
+                            }
+                            break;
                         case "arrvial":
                             if (this.juageRoadDistance()) {
-                                if (this.player.transform.localPositionY < 0) {
+                                if (this.player.transform.localPositionY < 1) {
                                     this.player.transform.localPositionY = 0;
                                 }
                                 this._moveArrivalPoint(this.outInfo.collider.owner);
@@ -1702,10 +2850,12 @@
                                 }
                             }
                             break;
-                        case "plank_road":
-                            if (this.juageBlankDistance(point)) {
-                                console.log("judge blank road");
-                                this.changePlayerState(CharacterAnimation.Running);
+                        default:
+                            if (colliderName.substring(0, 10) == "plank_hand") {
+                                if (this.juageBlankDistance(point)) {
+                                    console.log("judge blank road");
+                                    this.changePlayerState(CharacterAnimation.Running);
+                                }
                             }
                             break;
                     }
@@ -1732,15 +2882,28 @@
             else {
                 pos = this.blank_point.transform.position.clone();
             }
-            let cube = Pool.instance.getPlank_hand(this.blank_point, pos);
+            let cube = Pool.Spawn(this._plank_prefab, this.blank_point, pos);
             let animator = cube.getComponent(Laya.Animator);
+            animator.enabled = true;
             animator.play("blank_push");
+            let coll = cube.getComponent(Laya.PhysicsCollider);
+            coll.enabled = false;
             let target_y = cube.transform.localPositionY + 0.2;
             Laya.Tween.from(cube.transform, { localPositionY: target_y }, 0.6);
             cube.transform.rotation = this.blank_point.transform.rotation;
             this.cube_array.push(cube);
             AudioManager.instance().playEffect("Collect");
             SdkUitl.vibrateShort();
+            EventManager.dispatchEvent(EventName.PLAYER_PLANK_CHANGE, this.cube_count);
+        }
+        _addSpeed() {
+            if (GameData.excited) {
+                return;
+            }
+            if (this.forward_speed < speed$1 + 0.15) {
+                this.forward_speed += Laya.timer.delta / 1000 * 0.01;
+                this.playerMove.setValue(0, 0, this.forward_speed);
+            }
         }
         _popPlankToRoad() {
             if (!this._canPop) {
@@ -1751,16 +2914,21 @@
             }
             let cube = this.cube_array.pop();
             this.cube_count--;
-            Pool.instance.reversePlankHandCube(cube);
-            let plankRoad = Pool.instance.getPlank_road(GameData.map, this.player.transform.position.clone());
+            Pool.RecycleObj(cube, this._plank_prefab);
+            let plankRoad = Pool.Spawn(this._plank_prefab, GameData.map, this.player.transform.position.clone());
             plankRoad.transform.rotation = this.player.transform.rotation.clone();
             plankRoad.transform.setWorldLossyScale(Laya.Vector3.one);
+            let animator = plankRoad.getComponent(Laya.Animator);
+            animator.enabled = false;
+            let coll = plankRoad.getComponent(Laya.PhysicsCollider);
+            coll.enabled = true;
             this._canPop = false;
             Laya.timer.once(200, this, () => {
                 this._canPop = true;
             });
             AudioManager.instance().playEffect("Put");
             SdkUitl.vibrateShort();
+            EventManager.dispatchEvent(EventName.PLAYER_PLANK_CHANGE, this.cube_count);
         }
         _clearPlank() {
             Laya.timer.frameLoop(1, this.player, () => {
@@ -1770,7 +2938,7 @@
                 }
                 let cube = this.cube_array.pop();
                 this.cube_count--;
-                Pool.instance.reversePlankHandCube(cube);
+                Pool.RecycleObj(cube, this._plank_prefab);
             });
         }
         _throwPlank(cb) {
@@ -1800,12 +2968,14 @@
             this._throwPlank(() => {
                 this._clearPlank();
             });
+            this.clearExcited();
             this.changePlayerState(CharacterAnimation.Running);
             let pos = GameData.getArrivalPos();
             this.player.transform.lookAt(pos, Laya.Vector3.up, false, false);
             this._isMoveArrival = true;
             this._clearMoveTween();
             this.charactor_tween.to(this.player.transform, { localPositionX: pos.x, localPositionZ: pos.z }, 500, null, this.moveArrivalpointHandler);
+            this._hideTrail();
         }
         _clearMoveTween() {
             this.charactor_tween.clear();
@@ -1843,9 +3013,44 @@
                 let target = this._relifePart.getChildAt(0);
                 this.player.transform.lookAt(target.transform.position.clone(), Laya.Vector3.up, false, false);
                 MiniGameManager.instance().ResumeGame();
+                this._hideTrail();
             }
             else {
             }
+        }
+        setHandPrefab() {
+            let id = ShopManager.instance().getChoosePlankID();
+            let tmpl = StaticDataManager.getPlanksRecord(id);
+            this._plank_prefab = tmpl.Prefab;
+        }
+        _showTrail() {
+            if (!this.trail.active) {
+                this.trail.active = true;
+            }
+        }
+        _hideTrail() {
+            if (GameData.excited) {
+                return;
+            }
+            if (this.trail.active) {
+                this.trail.active = false;
+            }
+        }
+        startExcited() {
+            this._showTrail();
+            this.forward_speed = speed$1 + 0.1;
+            this._excitedTimer = setTimeout(() => {
+                this.clearExcited();
+            }, 10000);
+        }
+        clearExcited() {
+            if (!GameData.excited) {
+                return;
+            }
+            this.forward_speed = speed$1;
+            GameData.excited = false;
+            clearTimeout(this._excitedTimer);
+            this._hideTrail();
         }
     }
 
@@ -1854,6 +3059,10 @@
             super.onAwake();
             this._water = this.owner;
             this._mat = this._water.meshRenderer.material;
+            EventManager.register(EventName.CHANGE_WATER, this.SetWaterTexture, this);
+        }
+        onDestroy() {
+            EventManager.unRegister(EventName.CHANGE_WATER, this.SetWaterTexture, this);
         }
         init(data) {
             super.init(data);
@@ -1874,6 +3083,9 @@
             this._mat.tilingOffsetY += 0.01 * 0.02 * (Math.sin(uv_x * 3.5 + timer * 0.35) + Math.sin(uv_x * 4.8 + timer * 1.05) + Math.sin(uv_x * 7.3 + timer * 0.45)) / 3.0;
             this._mat.tilingOffsetX += 0.12 * 0.02 * (Math.sin(uv_y * 4.0 + timer * 0.5) + Math.sin(uv_y * 6.8 + timer * 0.75) + Math.sin(uv_y * 11.3 + timer * 0.2)) / 3.0;
             this._mat.tilingOffsetY += 0.12 * 0.02 * (Math.sin(uv_x * 4.2 + timer * 0.64) + Math.sin(uv_x * 6.3 + timer * 1.65) + Math.sin(uv_x * 8.2 + timer * 0.45)) / 3.0;
+        }
+        SetWaterTexture(index) {
+            this._mat.albedoTexture = GameData.waterTex_map.get(index.toString());
         }
     }
 
@@ -2082,6 +3294,7 @@
     class GameManager {
         constructor() {
             this.mapBox = new Box3();
+            this.water_index = 0;
             this.entitys = {};
             this.isGameReady = false;
         }
@@ -2091,9 +3304,6 @@
             }
             return this._instance;
         }
-        setUIScene(scene) {
-            this.scene_2d = scene;
-        }
         loadLevel(level) {
             GameData.name_array = GameData.RandomName();
             return new Promise(resolve => {
@@ -2102,6 +3312,7 @@
                     this.loadConfig(level),
                     this.loadSounds(),
                     this.loadRoadTextures(),
+                    this.loadWaterTextures()
                 ]).then(ret => {
                     this.data = ret[1];
                     this.data.objs.sort((a, b) => a.transform[14] - b.transform[14]);
@@ -2114,13 +3325,18 @@
                     this.map.transform.rotation = Quaternion$1.DEFAULT;
                     this.scene_3d.addChild(this.map);
                     Laya.stage.getChildByName("root").addChildAt(this.scene_3d, 0);
-                    console.log(Laya.stage, "root");
                     GameData.scene3d = this.scene_3d;
                     GameData.map = this.map;
                     if (this.road_mat) {
                         let index = (level - 1) % 7;
                         if (GameData.roadTex_map.has(index.toString()))
                             this.road_mat.albedoTexture = GameData.roadTex_map.get(index.toString());
+                    }
+                    if (MiniGameManager.instance().getSceneLevel() > 15 && MiniGameManager.instance().getSceneLevel() < 30) {
+                        EventManager.dispatchEvent(EventName.CHANGE_WATER, 0);
+                    }
+                    else if (MiniGameManager.instance().getSceneLevel() >= 30) {
+                        EventManager.dispatchEvent(EventName.CHANGE_WATER, 1);
                     }
                 }).then(() => {
                     this.init().then(() => {
@@ -2139,6 +3355,26 @@
                         Laya.Texture2D.load(GameDefine.roadTexPath + i + ".png", Handler$1.create(null, (tex) => {
                             if (!GameData.roadTex_map.has(i.toString())) {
                                 GameData.roadTex_map.set(i.toString(), tex);
+                            }
+                            resolve2();
+                        }));
+                    }));
+                }
+                Promise.all(arr).then(() => {
+                    Laya.timer.frameOnce(1, null, () => {
+                        resolve();
+                    });
+                });
+            });
+        }
+        loadWaterTextures() {
+            return new Promise(resolve => {
+                let arr = [];
+                for (let i = 0; i < 2; i++) {
+                    arr.push(new Promise(resolve2 => {
+                        Laya.Texture2D.load(GameDefine.waterTexPath + i + ".png", Handler$1.create(null, (tex) => {
+                            if (!GameData.waterTex_map.has(i.toString())) {
+                                GameData.waterTex_map.set(i.toString(), tex);
                             }
                             resolve2();
                         }));
@@ -2297,6 +3533,9 @@
                 case "arrival":
                     ins = clone.addComponent(Arrival);
                     break;
+                case "jumper":
+                    ins = clone.addComponent(Jumper);
+                    break;
                 default:
                     ins = clone.addComponent(Obj);
                     break;
@@ -2309,7 +3548,6 @@
             let scr = GameDefine.prefabRoot + 'Assets/Materialss/SkyMat.lmat';
             return new Promise(resolve => {
                 Laya.SkyBoxMaterial.load(scr, Laya.Handler.create(null, (m) => {
-                    console.log("load mat success", m);
                     this.sky_mat = m;
                     resolve();
                 }));
@@ -2346,7 +3584,8 @@
         UITYpes[UITYpes["PANEL"] = 0] = "PANEL";
         UITYpes[UITYpes["POPUP"] = 1] = "POPUP";
         UITYpes[UITYpes["TIP"] = 2] = "TIP";
-        UITYpes[UITYpes["TUTORIAL"] = 3] = "TUTORIAL";
+        UITYpes[UITYpes["EFFECT"] = 3] = "EFFECT";
+        UITYpes[UITYpes["TUTORIAL"] = 4] = "TUTORIAL";
     })(UITYpes || (UITYpes = {}));
     class PanelBase extends Laya.Script {
         constructor() {
@@ -2363,8 +3602,8 @@
                     let panel = this.owner;
                     panel.scaleX = 0.8;
                     panel.scaleY = 0.8;
-                    Laya.Tween.to(panel, { scaleX: 1.1, scaleY: 1.1 }, 0.2, null, Laya.Handler.create(this, () => {
-                        Laya.Tween.to(panel, { scaleX: 1, scaleY: 1 }, 0.1, null, Laya.Handler.create(this, () => {
+                    Laya.Tween.to(panel, { scaleX: 1.1, scaleY: 1.1 }, 200, null, Laya.Handler.create(this, () => {
+                        Laya.Tween.to(panel, { scaleX: 1, scaleY: 1 }, 100, null, Laya.Handler.create(this, () => {
                             if (this.onShowEnd) {
                                 this.onShowEnd();
                             }
@@ -2388,30 +3627,23 @@
         }
         onAwake() {
             AudioManager.instance().loadFromCache();
+            ShopManager.instance().loadFromCache();
             this._panelLayer = this.owner.getChildByName("PanelLayer");
             this._popupLayer = this.owner.getChildByName("PopupLayer");
             this._tipLayer = this.owner.getChildByName("TipLayer");
+            this._effectLayer = this.owner.getChildByName("EffectLayer");
         }
         onStart() {
-            let level = this.loadLevelFromCache();
+            let level = Math.floor(MiniGameManager.instance().getSceneLevel() / 3) + 1;
+            level = level % 7 == 0 ? 1 : level % 7;
             this.showPage(Constants.UIPage.loading);
             GameManager.instance().loadLevel(level).then(() => {
                 this.hidePage(Constants.UIPage.loading, () => {
                     this.showPage(Constants.UIPage.home, null);
+                    this.showPage(Constants.UIPage.info, null, true, true, true);
+                    SdkUitl.loadVideoRewardAd();
                 });
-                console.log("init scene");
             });
-        }
-        loadLevelFromCache() {
-            const level = Configuration.instance().getConfigData(Constants.LevelTick);
-            let scene_level;
-            if (level) {
-                scene_level = JSON.parse(level);
-            }
-            else {
-                scene_level = 1;
-            }
-            return scene_level;
         }
         hidePage(name, cb) {
             if (this.dictPanelMap.has(name)) {
@@ -2434,8 +3666,8 @@
                 const panel = this.dictPanelMap.get(name);
                 const comp = panel.getComponent(PanelBase);
                 const parent = this.getParent(comp.type);
-                parent.active = true;
                 parent.addChild(panel);
+                parent.active = true;
                 if (comp && comp['show']) {
                     comp['show'].apply(comp, args);
                 }
@@ -2470,6 +3702,8 @@
                     return this._popupLayer;
                 case UITYpes.TIP:
                     return this._tipLayer;
+                case UITYpes.EFFECT:
+                    return this._effectLayer;
             }
         }
         getPrefab(name) {
@@ -2484,63 +3718,177 @@
                     return this.resultPage;
                 case Constants.UIPage.loading:
                     return this.loadingPage;
+                case Constants.UIPage.shop:
+                    return this.shopPage;
+                case Constants.UIPage.info:
+                    return this.infoPage;
+                case Constants.UIPage.setting:
+                    return this.settingPage;
+                case Constants.UIPage.coinEffect:
+                    return this.coinEffectPage;
             }
+        }
+        getCoinPrefab() {
+            return this.coin;
         }
     }
     GamePage.instance = null;
 
-    class CharactorManager {
+    class DateUtil {
+        static isToday(time) {
+            return new Date(time).toLocaleDateString() == new Date().toLocaleDateString();
+        }
+        static isSameDay(time1, time2) {
+            return new Date(time1).toLocaleTimeString() == new Date(time2).toLocaleDateString();
+        }
+        static GetNextDay(time) {
+            let today = new Date(time).toLocaleDateString();
+            let tomorrow = new Date(today).getTime() + 24 * 60 * 60 * 1000;
+            return new Date(tomorrow);
+        }
+    }
+
+    class TimerUtil {
+        static start(targetObj, callback, interval, repeatTimes = -1, endCallback = null, ...args) {
+            let timerObj = {
+                target: targetObj,
+                callback: callback,
+                interval: interval,
+                repeatTimes: repeatTimes,
+                endCallback: endCallback,
+                curTimes: 0,
+                args: args
+            };
+            if (!callback || !callback.apply) {
+                console.trace();
+            }
+            let mapObj = {
+                timerId: 0,
+                timerObj: timerObj
+            };
+            mapObj.timerId = setInterval(this._getIntervalCallback(mapObj).bind(this), interval);
+            this._add(mapObj);
+            return mapObj.timerId;
+        }
+        static clear(obj) {
+            if (typeof obj === 'number') {
+                this._clear(obj);
+                return;
+            }
+            if (obj instanceof Array) {
+                while (obj.length) {
+                    let item = obj.pop();
+                    typeof item === 'number' && this._clear(item);
+                }
+                return;
+            }
+        }
+        static _clear(timerId) {
+            timerId = timerId >> 0;
+            if (timerId < 0) {
+                return;
+            }
+            clearInterval(timerId);
+            let timerObj = this._has(timerId);
+            if (!timerObj) {
+                return;
+            }
+            this._timerMap.delete(timerId);
+        }
+        static _add(timerObj) {
+            this._timerMap = this._timerMap || new Map();
+            this._timerMap.set(timerObj.timerId, timerObj);
+        }
+        static _has(timerId) {
+            timerId = timerId >> 0;
+            if (timerId < 0 || !this._timerMap || !this._timerMap.has(timerId)) {
+                return false;
+            }
+            return this._timerMap.get(timerId);
+        }
+        static _getIntervalCallback(timerObj) {
+            return function () {
+                let iTimerObj = timerObj.timerObj;
+                iTimerObj.curTimes++;
+                iTimerObj.callback.call(iTimerObj.target, iTimerObj.args);
+                if (iTimerObj.repeatTimes > 0 && iTimerObj.curTimes >= iTimerObj.repeatTimes) {
+                    this._clear(timerObj.timerId);
+                    if (iTimerObj.endCallback) {
+                        iTimerObj.endCallback.call(iTimerObj.target);
+                    }
+                }
+            };
+        }
+    }
+    TimerUtil._timerMap = null;
+
+    class DailyManager {
+        constructor() {
+            this._dailyTick = -1;
+            this._dailyTimer = -1;
+            this._leftTime = -1;
+        }
         static instance() {
             if (!this._instance) {
-                this._instance = new CharactorManager();
+                this._instance = new DailyManager();
             }
             return this._instance;
         }
         loadFromCache() {
-            const playerInfo = Configuration.instance().getConfigData(Constants.PlayerInfoID);
-            if (playerInfo) {
-                this.playerInfo = JSON.parse(playerInfo);
+            const dailyTick = Configuration.instance().getConfigData(Constants.DailyTick);
+            if (dailyTick) {
+                this._dailyTick = JSON.parse(dailyTick);
             }
-            else {
-                this.playerInfo = {
-                    money: 0
-                };
+            let now = new Date().getTime();
+            if (now > this._dailyTick) {
+                this._dailyTick = DateUtil.GetNextDay(now).getTime();
+                this.saveDailyTicktoCache();
+                GameRecorderManager.instance().resetHRecord();
             }
+            this._startTimer();
         }
-        saveAudioInfoToCache() {
-            const data = JSON.stringify(this.playerInfo);
-            Configuration.instance().setConfigData(Constants.PlayerInfoID, data);
+        saveDailyTicktoCache() {
+            const data = JSON.stringify(this._dailyTick);
+            Configuration.instance().setConfigData(Constants.DailyTick, data);
         }
-        addMoney(money) {
-            this.playerInfo.money += money;
-            this.saveAudioInfoToCache();
-            EventManager.dispatchEvent(EventName.ADD_MOENY);
+        _startTimer() {
+            TimerUtil.clear(this._dailyTimer);
+            let now = new Date().getTime();
+            this._leftTime = DateUtil.GetNextDay(new Date()).getTime() - now;
+            this._dailyTimer = TimerUtil.start(null, this._refreshDaily.bind(this), this._leftTime, 1);
         }
-        reduceMoney(money) {
-            if (this.playerInfo.money >= money) {
-                this.playerInfo.money -= money;
-                this.saveAudioInfoToCache();
-                EventManager.dispatchEvent(EventName.REDUCE_MOENY);
-            }
+        _refreshDaily() {
+            let now = new Date().getTime();
+            this._dailyTick = DateUtil.GetNextDay(now).getTime();
+            this.saveDailyTicktoCache();
+            GameRecorderManager.instance().resetHRecord();
+            this._startTimer();
         }
     }
-    CharactorManager._instance = null;
+    DailyManager._instance = null;
 
-    const width = 530;
+    const width = 490;
     class LoadingPage extends Laya.Script {
         constructor() {
             super(...arguments);
             this._isSubload = false;
             this._enterGame = false;
+            this._subTask = null;
         }
         onAwake() {
             this.uiBox = this.owner.getChildAt(0);
-            this.progress = this.owner.getChildByName("progress");
+            this.progress = this.owner.getChildByName("progressBack").getChildByName("progress");
             this.progress.width = 1;
         }
         onStart() {
             Configuration.instance().init();
             CharactorManager.instance().loadFromCache();
+            MiniGameManager.instance().loadLevelFromCache();
+            GameRecorderManager.instance().loadFromCache();
+            SdkUitl.initGameRecorder();
+            DailyManager.instance().loadFromCache();
+            SdkUitl.passiveShare();
+            SdkUitl.createVideoRewardAd();
             this.loadSubPackages();
         }
         onUpdate() {
@@ -2551,11 +3899,11 @@
             this._refreshProgress();
         }
         loadSubPackages() {
-            this._subTask = SdkUitl.loadSubpackage("sub1", () => {
+            SdkUitl.loadSubpackage("sub1", () => {
                 this.subCallback();
             });
             if (this._subTask) {
-                this._subTask.onProgressUpdate(res => {
+                this._subTask.onProgressUpdate((res) => {
                     this._subProgress = res.progress;
                 });
             }
@@ -2566,12 +3914,12 @@
                     this.progress.width = this._subProgress * 0.9 * width;
                 }
                 else {
-                    this.progress.width += Laya.timer.delta / 1000 * 0.5 * width;
+                    this.progress.width += Laya.timer.delta / 1000 * 0.6 * width;
                 }
             }
             else {
                 if (this._isSubload) {
-                    this.progress.width += Laya.timer.delta / 1000 * 0.2 * width;
+                    this.progress.width += Laya.timer.delta / 1000 * 0.3 * width;
                 }
                 if (this.progress.width >= width) {
                     this.progress.width = width;
@@ -2597,6 +3945,290 @@
         }
     }
 
+    class Info extends PanelBase {
+        constructor() {
+            super();
+            this._progressItems = [];
+            this.onShowEnd = this.showEndCallBack;
+            this._startPosY = 0;
+            Info.instance = this;
+        }
+        onAwake() {
+            this._info = this.owner;
+            this._uiBox = this._info.getChildAt(0);
+            this._levelInfoBack = this._uiBox.getChildByName("LevelInfoBack");
+            this._levelProgressBack = this._levelInfoBack.getChildByName("LevelProgressBack");
+            for (let i = 0; i < this._levelProgressBack.numChildren; i++) {
+                this._progressItems[i] = this._levelProgressBack.getChildAt(i);
+            }
+            this._coinInfo = this._uiBox.getChildByName("CoinInfo");
+            this._curLabel = this._levelInfoBack.getChildByName("CurBack").getChildAt(0);
+            this._nextLabel = this._levelInfoBack.getChildByName("NextBack").getChildAt(0);
+            this._titleBack = this._uiBox.getChildByName("TitleBack");
+            this._titleImage = this._titleBack.getChildByName("Title");
+            this._titleSeal = this._titleBack.getChildByName("Seal");
+            EventManager.register(EventName.CHANGE_TITLE, this._titleChanged, this);
+            this._startPosY = this._titleBack.y;
+        }
+        onStart() {
+            if (SdkUitl.isLongHeight()) {
+                this._titleBack.y = this._startPosY + 150;
+            }
+        }
+        show(coin, level, title, result = false) {
+            super.show();
+            CharactorManager.instance().setPlayerTitle();
+            this._refreshTitle(title);
+            this._refreshCoinUI(coin);
+            this._refreshLevelInfoUI(level, result);
+        }
+        hide() {
+            super.hide();
+            Laya.Tween.clearAll(this._titleSeal);
+            Laya.Tween.clearAll(this._titleImage);
+            this._titleSeal.scale(1, 1);
+            this._titleImage.scale(1, 1);
+        }
+        getCoinInfoPos() {
+            return new Laya.Vector2(this._coinInfo.x, this._coinInfo.y);
+        }
+        _refreshCoinUI(show) {
+            this._coinInfo.visible = show;
+        }
+        _refreshLevelInfoUI(show, result) {
+            this._levelInfoBack.visible = show;
+            if (show) {
+                let level = MiniGameManager.instance().getSceneLevel();
+                let curLevel = Math.floor(level / 3) + 1;
+                let part = result ? level % 3 + 1 : level % 3;
+                this._curLabel.text = curLevel.toString();
+                this._nextLabel.text = (curLevel + 1).toString();
+                for (let i = 0; i < this._progressItems.length; i++) {
+                    if (i < part) {
+                        this._progressItems[i].visible = true;
+                    }
+                    else {
+                        this._progressItems[i].visible = false;
+                    }
+                }
+            }
+        }
+        _refreshTitle(show) {
+            if (!show) {
+                this._titleBack.visible = false;
+                return;
+            }
+            this._titleBack.visible = true;
+            let title = CharactorManager.instance().getPlayerTitle();
+            switch (title) {
+                case PlayerTitle.QINGTONG:
+                    this._titleImage.skin = "textures/title1.png";
+                    break;
+                case PlayerTitle.BAIYING:
+                    this._titleImage.skin = "textures/title2.png";
+                    break;
+                case PlayerTitle.HUANGJING:
+                    this._titleImage.skin = "textures/title3.png";
+                    break;
+                case PlayerTitle.BOJING:
+                    this._titleImage.skin = "textures/title4.png";
+                    break;
+                case PlayerTitle.ZHUANSHI:
+                    this._titleImage.skin = "textures/title5.png";
+                    break;
+                case PlayerTitle.DASHI:
+                    this._titleImage.skin = "textures/title6.png";
+                    break;
+                case PlayerTitle.WANGZHE:
+                    this._titleImage.skin = "textures/title7.png";
+                    break;
+            }
+        }
+        _titleChanged() {
+            Laya.Tween.clearAll(this._titleSeal);
+            Laya.Tween.clearAll(this._titleImage);
+            this._titleImage.scale(1.2, 1.2);
+            Laya.Tween.to(this._titleImage, { scaleX: 1, scaleY: 1 }, 150, Laya.Ease.backIn, null, 450);
+            this._titleSeal.scale(2.5, 2.5);
+            Laya.Tween.to(this._titleSeal, { scaleX: 1, scaleY: 1 }, 300, Laya.Ease.backIn, Laya.Handler.create(this, () => {
+                AudioManager.instance().playEffect("Seal");
+            }), 450);
+        }
+        showEndCallBack() {
+        }
+    }
+    Info.instance = null;
+
+    class FlyCoin {
+        constructor(parent, count, startPos, prefab, endPos, cb) {
+            this.parent = parent;
+            this.count = count;
+            this.startPos = startPos;
+            this.prefab = prefab;
+            this.endPos = endPos;
+            this.cb = cb;
+        }
+        createEffect() {
+            return new Promise(resolve => {
+                let arr = [];
+                for (let i = 1; i <= this.count; i++) {
+                    let dt = (400 / this.count) * i * Math.PI / 180, dx = this.startPos.x + RandomUtil.Random(150, 200) * Math.cos(dt), dy = this.startPos.y + RandomUtil.Random(150, 200) * Math.sin(dt), coinNode = Pool.getCoin(this.prefab, this.parent);
+                    coinNode.active = true;
+                    coinNode.x = this.startPos.x;
+                    coinNode.y = this.startPos.y;
+                    coinNode.visible = true;
+                    coinNode.scale(0.65, 0.65);
+                    let time1 = RandomUtil.Random(0.2, 0.5) / 1.5, time2 = RandomUtil.Random(0.8, 1.1) / 1.5;
+                    arr.push(new Promise(resolve2 => {
+                        Laya.Tween.to(coinNode, { x: dx, y: dy }, time1 * 1000, null, Laya.Handler.create(this, () => {
+                            Laya.Tween.to(coinNode, { x: this.endPos.x, y: this.endPos.y }, time2 * 1000, Laya.Ease.cubicIn, Laya.Handler.create(this, () => {
+                                if (this.count % 2 == 0) {
+                                    AudioManager.instance().playEffect("Reward");
+                                }
+                                coinNode.scale(0.9, 0.9);
+                                Laya.Tween.to(coinNode, { scaleX: 1, scaleY: 1 }, 50, null, Laya.Handler.create(this, () => {
+                                    Laya.Tween.to(coinNode, { scaleX: 0.9, scaleY: 0.9 }, 50, null, Laya.Handler.create(this, () => {
+                                        Pool.putCoin(coinNode);
+                                        resolve2();
+                                    }));
+                                }));
+                            }));
+                        }));
+                    }));
+                }
+                Promise.all(arr).then(() => {
+                    if (this.cb)
+                        this.cb();
+                    resolve();
+                });
+            });
+        }
+    }
+    var FlyEffectType;
+    (function (FlyEffectType) {
+        FlyEffectType[FlyEffectType["Coin"] = 1] = "Coin";
+        FlyEffectType[FlyEffectType["Heat"] = 2] = "Heat";
+        FlyEffectType[FlyEffectType["Micro"] = 3] = "Micro";
+        FlyEffectType[FlyEffectType["DropCoin"] = 4] = "DropCoin";
+    })(FlyEffectType || (FlyEffectType = {}));
+    class CoinFlyEffect extends PanelBase {
+        constructor() {
+            super(...arguments);
+            this.type = UITYpes.EFFECT;
+            this._effectCount = 0;
+        }
+        show(start, callback, count, coin) {
+            let call = callback;
+            let num = count;
+            this.CreateMultiplyFlyEffect(num, start, call, coin);
+        }
+        hide() {
+        }
+        CreateMultiplyFlyEffect(num, startPos, cb = null, coinPrefab) {
+            this._effectCount++;
+            let endPos = Info.instance.getCoinInfoPos();
+            let parent = this.owner.getChildAt(0);
+            this.effect = new FlyCoin(parent, num, startPos, coinPrefab, endPos, cb);
+            this.effect.createEffect().then(() => {
+                this._effectCount--;
+                if (this._effectCount <= 0) {
+                    GamePage.instance.hidePage(Constants.UIPage.coinEffect);
+                    this._effectCount = 0;
+                }
+            });
+        }
+        getRandom(min = 0, max = 1) {
+            return min + (max - min) * Math.random();
+        }
+    }
+
+    class Home extends PanelBase {
+        constructor() {
+            super();
+            this.type = UITYpes.PANEL;
+            Home.instance = this;
+        }
+        onAwake() {
+            this._homeUI = this.owner;
+            this._uiBox = this._homeUI.getChildAt(0);
+            this._startBtn = this._uiBox.getChildByName("StartBtn");
+            this._shareBtn = this._uiBox.getChildByName("ShareBtn");
+            this._shopBtn = this._uiBox.getChildByName("ShopBtn");
+            this._settingBtn = this._uiBox.getChildByName("SettingBtn");
+            this._videoBtn = this._uiBox.getChildByName("VideoBtn");
+            this._startBtn.on(Laya.Event.CLICK, this, this.startGame);
+            this._shopBtn.on(Laya.Event.CLICK, this, this.showShopView);
+            this._shareBtn.on(Laya.Event.CLICK, this, this.ShareGame);
+            this._settingBtn.on(Laya.Event.CLICK, this, this.showSettingPage);
+            this._videoBtn.on(Laya.Event.CLICK, this, this.addSpeed);
+            this._startPosY = this._startBtn.y;
+        }
+        onStart() {
+        }
+        show(...args) {
+            super.show();
+            SdkUitl.showBanner();
+            if (Laya.Browser.window.tt) {
+                this._shareBtn.visible = false;
+            }
+            if (SdkUitl.isLongHeight()) {
+                this._startBtn.y = this._startPosY + 150;
+            }
+        }
+        hide() {
+            super.hide();
+            SdkUitl.hideBanner();
+        }
+        onEnable() {
+        }
+        onDisable() {
+        }
+        startGame() {
+            if (GameDefine.gameState != GameState.Playing) {
+                AudioManager.instance().playEffect("Click");
+                MiniGameManager.instance().StartGame();
+                GamePage.instance.hidePage(Constants.UIPage.info);
+                GamePage.instance.hidePage(Constants.UIPage.home, () => {
+                    GamePage.instance.showPage(Constants.UIPage.playing);
+                    SdkUitl.startGameRecord();
+                });
+            }
+        }
+        showShopView() {
+            AudioManager.instance().playEffect("Click");
+            GamePage.instance.hidePage(Constants.UIPage.home, () => {
+                GamePage.instance.showPage(Constants.UIPage.shop);
+            });
+        }
+        ShareGame() {
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.share(false, () => {
+                SdkUitl.ShowToast("分享成功，获得100金币！");
+                CharactorManager.instance().addMoney(100, true);
+                let startPos = new Laya.Vector2(this._shareBtn.x, this._shareBtn.y);
+                GamePage.instance.showPage(Constants.UIPage.coinEffect, null, startPos, () => {
+                    EventManager.dispatchEvent(EventName.ADD_MOENY);
+                }, 10, GamePage.instance.getCoinPrefab());
+            }, () => {
+                SdkUitl.ShowToast("分享失败，请分享到不同的群");
+            });
+        }
+        showSettingPage() {
+            AudioManager.instance().playEffect("Click");
+            GamePage.instance.showPage(Constants.UIPage.setting);
+        }
+        addSpeed() {
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.showVideoRewardAd(() => {
+                GameData.excited = true;
+                SdkUitl.ShowToast("恭喜获得开局10秒加速~");
+            }, () => {
+                SdkUitl.ShowToast("只有观看完毕才可获取奖励哦~");
+            });
+        }
+    }
+    Home.instance = null;
+
     class MoneyInfo extends Laya.Script {
         onAwake() {
             this._moneyBack = this.owner;
@@ -2616,40 +4248,6 @@
             ;
         }
     }
-
-    class Home extends PanelBase {
-        constructor() {
-            super();
-            this.type = UITYpes.PANEL;
-            Home.instance = this;
-        }
-        onAwake() {
-            this._homeUI = this.owner;
-            this._uiBox = this._homeUI.getChildAt(0);
-            this._startBtn = this._uiBox.getChildByName("StartBtn");
-        }
-        show(...args) {
-            super.show();
-        }
-        hide() {
-            super.hide();
-        }
-        onEnable() {
-            this._startBtn.on(Laya.Event.CLICK, null, this.startGame.bind(this));
-        }
-        onDisable() {
-            this._startBtn.off(Laya.Event.CLICK, null, this.startGame.bind(this));
-        }
-        startGame() {
-            if (GameDefine.gameState != GameState.Playing) {
-                MiniGameManager.instance().StartGame();
-                GamePage.instance.hidePage(Constants.UIPage.home, () => {
-                    GamePage.instance.showPage(Constants.UIPage.playing);
-                });
-            }
-        }
-    }
-    Home.instance = null;
 
     class Loading extends PanelBase {
         constructor() {
@@ -2678,6 +4276,67 @@
             super.hide();
             this._startRotate = false;
             this._round.rotation = 0;
+        }
+    }
+
+    class PlankShopItem extends Laya.Script {
+        constructor() {
+            super(...arguments);
+            this._unlock = false;
+        }
+        onAwake() {
+            this._backBtn = this.owner;
+            this._icon = this._backBtn.getChildByName("icon");
+            this._lock = this._backBtn.getChildByName("lock");
+            this._check = this._backBtn.getChildByName("check");
+            if (this._id) {
+                this._refreshItem(this._id);
+            }
+        }
+        onStart() {
+        }
+        setData(id) {
+            if (!id) {
+                return;
+            }
+            this._id = id;
+            if (this._backBtn) {
+                this._refreshItem(id);
+            }
+        }
+        _refreshItem(id) {
+            this._backBtn.on(Laya.Event.CLICK, this, this._chooseSkin);
+            let tmpl = StaticDataManager.getPlanksRecord(id);
+            this._unlock = ShopManager.instance().hasUnlock(id);
+            if (this._unlock) {
+                this._lock.visible = false;
+                if (ShopManager.instance().getChoosePlankID() == id) {
+                    this._backBtn.skin = "textures/grid_green.png";
+                    this._check.visible = true;
+                }
+                else {
+                    this._backBtn.skin = "textures/grid_blue.png";
+                    this._check.visible = false;
+                }
+                let spriteName = tmpl.SpriteName;
+                let url = `planks/${spriteName}.png`;
+                this._icon.skin = url;
+                this._icon.visible = true;
+                return;
+            }
+            this._backBtn.skin = "textures/grid_grey.png";
+            this._icon.visible = false;
+            this._check.visible = false;
+            this._lock.visible = true;
+        }
+        _chooseSkin() {
+            console.log("choose skin", this._id);
+            if (this._unlock) {
+                ShopManager.instance().choosePlank(this._id);
+            }
+            else {
+                return;
+            }
         }
     }
 
@@ -2723,21 +4382,19 @@
             }
         }
         showRelifeUI() {
-            console.log("show relife");
             GamePage.instance.hidePage(Constants.UIPage.playing, () => {
                 GamePage.instance.showPage(Constants.UIPage.relife, null, 0);
             });
         }
         showDieUI() {
-            console.log("show die");
             GamePage.instance.hidePage(Constants.UIPage.playing, () => {
                 GamePage.instance.showPage(Constants.UIPage.relife, null, 1);
             });
         }
         showResultUI() {
-            console.log("show result");
             GamePage.instance.hidePage(Constants.UIPage.playing, () => {
                 GamePage.instance.showPage(Constants.UIPage.result);
+                GamePage.instance.showPage(Constants.UIPage.info, null, true, true, false, true);
             });
         }
     }
@@ -2755,19 +4412,19 @@
             this._uiBox = this._relife.getChildAt(0);
             this._relifeBtn = this._uiBox.getChildByName("RelifeBtn");
             this._restartBtn = this._uiBox.getChildByName("AgainBtn");
+            this._shareBtn = this._uiBox.getChildByName("ShareBtn");
             this._title = this._uiBox.getChildByName("Title");
             this._timerImg = this._uiBox.getChildByName("Timer");
-        }
-        onEnable() {
             this._relifeBtn.on(Laya.Event.CLICK, this, this.playerRelfie.bind(this));
+            this._shareBtn.on(Laya.Event.CLICK, this, this.relifeByShare.bind(this));
             this._restartBtn.on(Laya.Event.CLICK, this, this.playAgain.bind(this));
         }
+        onEnable() {
+        }
         onDisable() {
-            this._relifeBtn.offAll();
         }
         show(type = 0) {
             super.show();
-            console.log(type, "type");
             switch (type) {
                 case 0:
                     this._relifeBtn.visible = true;
@@ -2782,27 +4439,53 @@
                     this._title.visible = true;
                     break;
             }
+            SdkUitl.showBanner();
+            SdkUitl.stopGameRecord();
         }
         hide() {
             super.hide();
+            SdkUitl.hideBanner();
         }
         playerRelfie() {
-            Laya.timer.clear(this, this._refreshCountdown);
-            GamePage.instance.hidePage(Constants.UIPage.relife, () => {
-                GamePage.instance.showPage(Constants.UIPage.playing, () => {
-                    EventManager.dispatchEvent(EventName.PLAYER_RELIFE);
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.showVideoRewardAd(() => {
+                Laya.timer.clear(this, this._refreshCountdown);
+                GamePage.instance.hidePage(Constants.UIPage.relife, () => {
+                    GamePage.instance.showPage(Constants.UIPage.playing, () => {
+                        EventManager.dispatchEvent(EventName.PLAYER_RELIFE);
+                        SdkUitl.startGameRecord();
+                    });
                 });
+            }, () => {
+                SdkUitl.ShowToast("只有观看完毕才可获取奖励哦~");
+            });
+        }
+        relifeByShare() {
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.share(false, () => {
+                Laya.timer.clear(this, this._refreshCountdown);
+                GamePage.instance.hidePage(Constants.UIPage.relife, () => {
+                    GamePage.instance.showPage(Constants.UIPage.playing, () => {
+                        EventManager.dispatchEvent(EventName.PLAYER_RELIFE);
+                    });
+                });
+            }, () => {
+                SdkUitl.ShowToast("分享失败~");
             });
         }
         playAgain() {
+            AudioManager.instance().playEffect("Click");
             Laya.timer.clear(this, this._refreshCountdown);
             GamePage.instance.hidePage(Constants.UIPage.relife, () => {
                 ES.instance.event(ES.on_clear_scene);
                 GamePage.instance.showPage(Constants.UIPage.loading);
-                GameManager.instance().loadLevel(GameData.level).then(() => {
+                let level = Math.floor(MiniGameManager.instance().getSceneLevel() / 3) + 1;
+                level = level % 7 == 0 ? 1 : level % 7;
+                GameManager.instance().loadLevel(level).then(() => {
                     console.log('init scene complete');
                     GamePage.instance.hidePage(Constants.UIPage.loading, () => {
                         GamePage.instance.showPage(Constants.UIPage.home, null);
+                        GamePage.instance.showPage(Constants.UIPage.info, null, true, true, true);
                     });
                 });
             });
@@ -2856,6 +4539,8 @@
                 this._rankBack.skin = "textures/you.png";
                 this.playTween();
                 GameData.rewardCoin = MiniGameManager.instance().getRewardCoinCount(data.rank);
+                GameData.rewardScore = MiniGameManager.instance().getRankScore(data.rank);
+                CharactorManager.instance().addScore(GameData.rewardScore);
             }
             else {
                 this._rankBack.skin = "textures/RankPanel.png";
@@ -2890,46 +4575,120 @@
             this._result = this.owner;
             this._uiBox = this._result.getChildAt(0);
             this._videoBtn = this._uiBox.getChildByName("VideoBtn");
+            this._shareBtn = this._uiBox.getChildByName("ShareBtn");
             this._directBtn = this._uiBox.getChildByName("DirectBtn");
+            this._recordBtn = this._uiBox.getChildByName("RecordBtn");
+            this._recordLabel = this._recordBtn.getChildByName("RecordLabel");
             this._ranks = this._uiBox.getChildByName("Ranks");
             this._youRankLabel = this._uiBox.getChildByName("RankBack").getChildByName("YouRankBack");
+            this._videoBtn.on(Laya.Event.CLICK, this, this.getVideoReward);
+            this._shareBtn.on(Laya.Event.CLICK, this, this.getRewardByShare);
+            this._directBtn.on(Laya.Event.CLICK, this, this.getDirectReward);
+            this._recordBtn.on(Laya.Event.CLICK, this, this.shareRecord);
         }
         onStart() {
-            this._videoBtn.on(Laya.Event.CLICK, this, this.getVideoReward);
-            this._directBtn.on(Laya.Event.CLICK, this, this.getDirectReward);
         }
         show() {
             super.show();
             this._refreshYouRankLabel();
+            SdkUitl.showBanner();
+            SdkUitl.stopGameRecord();
+            if (Laya.Browser.window.tt) {
+                this._shareBtn.visible = false;
+                this._recordBtn.visible = true;
+                if (GameRecorderManager.instance().canShowReward()) {
+                    this._recordLabel.text = "三倍领取";
+                    this._recordBtn.centerX = -185;
+                    this._recordBtn.centerY = 300;
+                    this._recordBtn.scale(1, 1);
+                    this._videoBtn.visible = false;
+                }
+                else {
+                    this._recordLabel.text = "分享录屏";
+                    this._recordBtn.centerX = 0;
+                    this._recordBtn.centerY = 150;
+                    this._recordBtn.scale(0.8, 0.8);
+                    this._videoBtn.visible = true;
+                }
+            }
+            else {
+                this._videoBtn.visible = true;
+                this._shareBtn.visible = false;
+                this._recordBtn.visible = false;
+            }
+            if (MiniGameManager.instance().getSceneLevel() % 3 == 0) {
+                SdkUitl.showInterstitialAd();
+            }
         }
         hide() {
             super.hide();
+            SdkUitl.hideBanner();
+        }
+        shareRecord() {
+            if (!SdkUitl.canReleaseGameRecord()) {
+                return;
+            }
+            if (GameRecorderManager.instance().canShowReward()) {
+                SdkUitl.releaseGameRecord(() => {
+                    let startPos = new Laya.Vector2(this._recordBtn.x, this._recordBtn.y);
+                    GamePage.instance.showPage(Constants.UIPage.coinEffect, null, startPos, () => {
+                        EventManager.dispatchEvent(EventName.ADD_MOENY);
+                    }, 10, GamePage.instance.getCoinPrefab());
+                    this._getReward(3);
+                    this.nextLevel();
+                    this._recordBtn.visible = false;
+                    SdkUitl.ShowToast("录屏分享成功，获得三倍奖励~");
+                }, () => {
+                    SdkUitl.ShowToast("录屏分享失败");
+                });
+            }
+            else {
+                SdkUitl.releaseGameRecord(() => {
+                    SdkUitl.ShowToast("录屏分享成功~");
+                }, () => {
+                    SdkUitl.ShowToast("录屏分享失败");
+                });
+            }
         }
         getVideoReward() {
-            this._getReward(3);
-            this.nextLevel();
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.showVideoRewardAd(() => {
+                SdkUitl.ShowToast("恭喜获得三倍奖励~");
+                let startPos = new Laya.Vector2(this._videoBtn.x, this._videoBtn.y);
+                GamePage.instance.showPage(Constants.UIPage.coinEffect, null, startPos, () => {
+                    EventManager.dispatchEvent(EventName.ADD_MOENY);
+                }, 10, GamePage.instance.getCoinPrefab());
+                this._getReward(3);
+                this.nextLevel();
+            }, () => {
+                SdkUitl.ShowToast("只有观看完毕才可获取奖励哦~");
+            });
         }
         getDirectReward() {
+            AudioManager.instance().playEffect("Click");
+            let startPos = new Laya.Vector2(this._directBtn.x, this._directBtn.y);
+            GamePage.instance.showPage(Constants.UIPage.coinEffect, null, startPos, () => {
+                EventManager.dispatchEvent(EventName.ADD_MOENY);
+            }, 10, GamePage.instance.getCoinPrefab());
             this._getReward();
             this.nextLevel();
         }
         nextLevel() {
-            GameData.level++;
-            if (GameData.level > GameDefine.maxLevel) {
-                GameData.level = 1;
-            }
+            MiniGameManager.instance().nextLevel();
+            let level = Math.floor(MiniGameManager.instance().getSceneLevel() / 3) + 1;
+            level = level % 7 == 0 ? 1 : level % 7;
             GamePage.instance.hidePage(Constants.UIPage.result, () => {
                 ES.instance.event(ES.on_clear_scene);
                 GamePage.instance.showPage(Constants.UIPage.loading);
-                GameManager.instance().loadLevel(GameData.level).then(() => {
+                GameManager.instance().loadLevel(level).then(() => {
                     GamePage.instance.hidePage(Constants.UIPage.loading, () => {
                         GamePage.instance.showPage(Constants.UIPage.home);
+                        GamePage.instance.showPage(Constants.UIPage.info, null, true, true, true);
                     });
                 });
             });
         }
         setRankItem() {
-            console.log(GameData.playerInfos, "GameData.playerInfos");
             for (let i = 0; i < this._ranks.numChildren; i++) {
                 let playerData;
                 GameData.playerInfos.map(data => {
@@ -2943,7 +4702,7 @@
         }
         _getReward(rate = 1) {
             let rewardCoin = GameData.rewardCoin * rate;
-            CharactorManager.instance().addMoney(rewardCoin);
+            CharactorManager.instance().addMoney(rewardCoin, true);
         }
         _refreshYouRankLabel() {
             let rank = GameData.playRank;
@@ -2962,8 +4721,150 @@
                     break;
             }
         }
+        getRewardByShare() {
+            AudioManager.instance().playEffect("Click");
+            SdkUitl.share(false, () => {
+                SdkUitl.ShowToast("分享成功，获得三倍金币奖励！！！");
+                this._getReward(3);
+                this.nextLevel();
+            }, () => {
+                SdkUitl.ShowToast("分享失败，请分享到不同的群~");
+            });
+        }
     }
     Result.instance = null;
+
+    class Setting extends PanelBase {
+        constructor() {
+            super();
+            this.type = UITYpes.PANEL;
+            Setting.instance = this;
+        }
+        onAwake() {
+            this._setting = this.owner;
+            this._uiBox = this._setting.getChildAt(0);
+            this._closeBtn = this._uiBox.getChildByName("CloseBtn");
+            this._vibrateToggle = this._uiBox.getChildByName("Vibrate").getChildByName("VibrateToggle");
+            this._audioToggle = this._uiBox.getChildByName("Audio").getChildByName("AudioToggle");
+            this._closeBtn.on(Laya.Event.CLICK, this, this.onCloseBtnClick);
+            this._vibrateToggle.on(Laya.Event.CLICK, this, this.onVibrateToggleClick);
+            this._audioToggle.on(Laya.Event.CLICK, this, this.onAudioToggleClick);
+        }
+        onStart() {
+        }
+        show() {
+            super.show();
+            this._refreshSettingUI();
+        }
+        hide() {
+            super.hide();
+        }
+        _refreshSettingUI() {
+            if (AudioManager.instance().getVibrate()) {
+                this._vibrateToggle.skin = "textures/toggle_on.png";
+            }
+            else {
+                this._vibrateToggle.skin = "textures/toggle_off.png";
+            }
+            if (AudioManager.instance().getAudioMute()) {
+                this._audioToggle.skin = "textures/toggle_off.png";
+            }
+            else {
+                this._audioToggle.skin = "textures/toggle_on.png";
+            }
+        }
+        onVibrateToggleClick() {
+            AudioManager.instance().playEffect("Click");
+            AudioManager.instance().setVibrate(!AudioManager.instance().getVibrate());
+            this._refreshSettingUI();
+        }
+        onAudioToggleClick() {
+            AudioManager.instance().setAudioMute(!AudioManager.instance().getAudioMute());
+            AudioManager.instance().playEffect("Click");
+            this._refreshSettingUI();
+        }
+        onCloseBtnClick() {
+            AudioManager.instance().playEffect("Click");
+            GamePage.instance.hidePage(Constants.UIPage.setting, () => {
+            });
+        }
+    }
+    Setting.instance = null;
+
+    class Shop extends PanelBase {
+        constructor() {
+            super();
+            Shop.instance = this;
+        }
+        onAwake() {
+            this._shop = this.owner;
+            this._uiBox = this._shop.getChildAt(0);
+            this._plankList = this._uiBox.getChildByName("PlankList");
+            this._listBox = this._plankList.getChildAt(0);
+            this._unLockBtn = this._uiBox.getChildByName("CoinUnlockBtn");
+            this._priceLabel = this._unLockBtn.getChildByName("CoinCount");
+            this._adBtn = this._uiBox.getChildByName("AdBtn");
+            this._homeBtn = this._uiBox.getChildByName("HomeBtn");
+            this.show();
+            this._unLockBtn.on(Laya.Event.CLICK, this, this.randomUnlcok);
+            this._adBtn.on(Laya.Event.CLICK, this, this.addMoneyByAD);
+            this._homeBtn.on(Laya.Event.CLICK, this, this.showHomeView);
+            EventManager.register(EventName.SHOP_PLANK_BUY, this._refeshUI, this);
+            EventManager.register(EventName.SHOP_PLANK_CHOOSE, this._refeshUI, this);
+        }
+        onStart() {
+        }
+        show() {
+            if (!this._shop) {
+                return;
+            }
+            if (this._listBox.numChildren > 0) {
+                this._refeshUI();
+                return;
+            }
+            SdkUitl.hideBanner();
+        }
+        _refeshUI() {
+            let tmpls = StaticDataManager.getPlanksRecord();
+            let index = 0;
+            for (let key in tmpls) {
+                let item = this._listBox.getChildAt(index).getChildAt(0);
+                const comp = item.getComponent(PlankShopItem);
+                comp.setData(key);
+                index++;
+            }
+            if (!ShopManager.instance().isAllUnlock()) {
+                this._unLockBtn.visible = true;
+                this._priceLabel.text = (ShopManager.instance().getUnlockCount() * 1500).toString();
+            }
+            else {
+                this._unLockBtn.visible = false;
+            }
+        }
+        randomUnlcok() {
+            ShopManager.instance().unlockPlankByMoney();
+        }
+        showHomeView() {
+            AudioManager.instance().playEffect("Click");
+            GamePage.instance.hidePage(Constants.UIPage.shop, () => {
+                GamePage.instance.showPage(Constants.UIPage.home);
+            });
+        }
+        addMoneyByAD() {
+            AudioManager.instance().playEffect("Click");
+            let startPos = new Laya.Vector2(this._adBtn.x, this._adBtn.y);
+            SdkUitl.showVideoRewardAd(() => {
+                CharactorManager.instance().addMoney(1500, true);
+                SdkUitl.ShowToast("恭喜获得1500金币~");
+                GamePage.instance.showPage(Constants.UIPage.coinEffect, null, startPos, () => {
+                    EventManager.dispatchEvent(EventName.ADD_MOENY);
+                }, 10, GamePage.instance.getCoinPrefab());
+            }, () => {
+                SdkUitl.ShowToast("只有观看完毕才可获取奖励哦~");
+            });
+        }
+    }
+    Shop.instance = null;
 
     class GameConfig {
         constructor() {
@@ -2972,13 +4873,18 @@
             var reg = Laya.ClassUtils.regClass;
             reg("script/Pages/GamePage.ts", GamePage);
             reg("script/Pages/LoadingPage.ts", LoadingPage);
-            reg("script/UI/Compoments/MoneyInfo.ts", MoneyInfo);
+            reg("Util/CoinFlyEffect.ts", CoinFlyEffect);
             reg("script/UI/Home.ts", Home);
+            reg("script/UI/Compoments/MoneyInfo.ts", MoneyInfo);
+            reg("script/UI/Info.ts", Info);
             reg("script/UI/Loading.ts", Loading);
+            reg("script/UI/Compoments/PlankShopItem.ts", PlankShopItem);
             reg("script/UI/Playing.ts", Playing);
             reg("script/UI/Relife.ts", Relife);
             reg("script/UI/Compoments/RankItem.ts", RankItem);
             reg("script/UI/Result.ts", Result);
+            reg("script/UI/Setting.ts", Setting);
+            reg("script/UI/Shop.ts", Shop);
         }
     }
     GameConfig.width = 750;

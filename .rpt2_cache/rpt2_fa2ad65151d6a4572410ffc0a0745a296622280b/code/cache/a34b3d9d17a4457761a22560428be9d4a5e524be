@@ -1,0 +1,9 @@
+{
+  "code": "import { Configuration } from \"../../Data/Configuration\";\r\nimport { Constants } from \"../../Data/Constants\";\r\nimport AudioManager from \"../Singleton/AudioManager\";\r\nimport GameManager from \"../Singleton/GameManager\";\r\nexport default class GamePage extends Laya.Script {\r\n    onAwake() {\r\n        let level = this.loadLevelFromCache();\r\n        GameManager.instance().loadLevel(level);\r\n        AudioManager.instance().loadFromCache();\r\n        let page = this.PlayingPage.create();\r\n        console.log(page, \"page\");\r\n        this.owner.addChild(page);\r\n    }\r\n    loadLevelFromCache() {\r\n        const level = Configuration.instance().getConfigData(Constants.LevelTick);\r\n        let scene_level;\r\n        if (level) {\r\n            scene_level = JSON.parse(level);\r\n        }\r\n        else {\r\n            scene_level = 1;\r\n        }\r\n        return scene_level;\r\n    }\r\n}\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Configuration.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Constants.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/AudioManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameManager.ts"
+  ]
+}

@@ -7,7 +7,11 @@ export class Constants {
         playing: "Playing",
         relife: "Relife",
         result: "Result",
-        loading: "Loading"
+        loading: "Loading",
+        shop: "Shop",
+        info: "Info",
+        setting:"Setting",
+        coinEffect:"CoinEffect"
 
     }
 
@@ -16,7 +20,12 @@ export class Constants {
     public static LevelTick = 'level_tick';
     public static AudioConfigID = 'audioConfigID';
     public static PlayerInfoID = 'playerInfoID';
+    public static ShopInfoID = 'shopInfoID';
+    public static PlankChooseID = 'plankChooseID';
+    public static GameRecordID = 'gameRecordID';
+    public static DailyTick = 'dailyTick';
 
 
+    public static MaxPlankSkin = 8;
 
 }

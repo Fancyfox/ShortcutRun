@@ -1,0 +1,9 @@
+{
+  "code": "import EventManager from \"../script/Singleton/EventManager\";\r\nimport { EventName } from \"../script/Singleton/GameDefine\";\r\nimport { Configuration } from \"./Configuration\";\r\nimport { Constants } from \"./Constants\";\r\nexport class CharactorManager {\r\n    static instance() {\r\n        if (!this._instance) {\r\n            this._instance = new CharactorManager();\r\n        }\r\n        return this._instance;\r\n    }\r\n    loadFromCache() {\r\n        const playerInfo = Configuration.instance().getConfigData(Constants.PlayerInfoID);\r\n        if (playerInfo) {\r\n            this.playerInfo = JSON.parse(playerInfo);\r\n        }\r\n        else {\r\n            this.playerInfo = {\r\n                money: 0\r\n            };\r\n        }\r\n    }\r\n    savePlayerInfoToCache() {\r\n        const data = JSON.stringify(this.playerInfo);\r\n        Configuration.instance().setConfigData(Constants.PlayerInfoID, data);\r\n    }\r\n    addMoney(money) {\r\n        this.playerInfo.money += money;\r\n        this.savePlayerInfoToCache();\r\n        EventManager.dispatchEvent(EventName.ADD_MOENY);\r\n    }\r\n    reduceMoney(money) {\r\n        if (this.playerInfo.money >= money) {\r\n            this.playerInfo.money -= money;\r\n            this.savePlayerInfoToCache();\r\n            EventManager.dispatchEvent(EventName.REDUCE_MOENY);\r\n            return true;\r\n        }\r\n        return false;\r\n    }\r\n}\r\nCharactorManager._instance = null;\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/EventManager.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Singleton/GameDefine.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Configuration.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/Data/Constants.ts"
+  ]
+}

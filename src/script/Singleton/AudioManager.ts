@@ -7,7 +7,8 @@ export interface IAudioInfo {
     musicMute: boolean,
     effectMute: boolean,
     musicVolume: number,
-    effectVolume: number
+    effectVolume: number,
+    vibrate: boolean
 }
 
 export default class AudioManager {
@@ -35,7 +36,7 @@ export default class AudioManager {
         } else {
             this._generateAudio();
         }
-        
+
     }
 
     public saveAudioInfoToCache() {
@@ -48,7 +49,8 @@ export default class AudioManager {
             musicMute: false,
             effectMute: false,
             musicVolume: 0.5,
-            effectVolume: 0.5
+            effectVolume: 0.5,
+            vibrate: true
         }
         this.saveAudioInfoToCache();
     }
@@ -81,6 +83,18 @@ export default class AudioManager {
 
     }
 
+    public setVibrate(vibrate: boolean) {
+        if (this.audioInfo.vibrate = vibrate) {
+            return;
+        }
+        this.audioInfo.vibrate = vibrate;
+        this.saveAudioInfoToCache();
+    }
+
+    public getVibrate() {
+        return this.audioInfo.vibrate;
+    }
+
     public setMusicVolume(volume: number) {
 
 
@@ -91,7 +105,19 @@ export default class AudioManager {
             const path = `subPackage/sub2/Audio/Effect/${name}.mp3`;
             Laya.SoundManager.playSound(path);
         }
+    }
 
+    public setAudioMute(mute: boolean) {
+        if (this.audioInfo.effectMute == mute) {
+            return;
+        }
+        this.audioInfo.effectMute = mute;
+        this.audioInfo.musicMute = mute;
+        this.saveAudioInfoToCache();
+    }
+
+    public getAudioMute() {
+        return this.audioInfo.effectMute;
     }
 
     public stopAllEffects() {

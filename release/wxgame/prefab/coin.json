@@ -1,0 +1,1 @@
+{"type":"Sprite","props":{"y":40,"x":40,"width":80,"texture":"textures/Coin.png","presetID":1,"pivotY":40,"pivotX":40,"name":"coin","isPresetRoot":true,"height":80},"compId":164,"loadList":["textures/Coin.png"],"loadList3D":[]}

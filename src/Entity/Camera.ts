@@ -24,17 +24,20 @@ export default class Camera extends Laya.Script3D {
   }
 
   onEnable() {
-    //EventManager.register(EventName.MINI_GAME_START, this._cameraPointTween, this);
+    EventManager.register(EventName.PLAYER_PLANK_CHANGE, this.changeCameraFieldOfView, this);
+    EventManager.register(EventName.MINI_GAME_END,this.changeCameraToFinal,this);
   }
 
   onDisable() {
-    //EventManager.dispatchEvent(EventName.MINI_GAME_START, this._cameraPointTween, this);
+    EventManager.unRegister(EventName.PLAYER_PLANK_CHANGE, this.changeCameraFieldOfView, this);
+    EventManager.unRegister(EventName.MINI_GAME_END,this.changeCameraToFinal,this);
   }
 
   public initPlayerData(player: Laya.Sprite3D, point: Laya.Sprite3D) {
     this._target = player;
     this._point = point;
     this._start_moving = false;
+    this._camera.fieldOfView = 50;
   }
 
   onLateUpdate() {
@@ -67,9 +70,28 @@ export default class Camera extends Laya.Script3D {
       return;
     }
     this._start_moving = true;
+    Laya.Tween.clearAll(this._camera);
+    Laya.Tween.to(this._camera, { fieldOfView: 40 }, 500, Laya.Ease.linearIn);
     Laya.Tween.to(point.transform, { localPositionZ: -10, localPositionY: 5 }, 1000, null, Laya.Handler.create(this, () => {
     }))
+
   }
+
+  private changeCameraFieldOfView(count: number) {
+    Laya.Tween.clearAll(this._camera);
+    let fie = 45 + count / 2;
+    if (fie > 80) {
+      fie = 80;
+    }
+    Laya.Tween.to(this._camera, { fieldOfView: fie }, 200, Laya.Ease.linearIn);
+  }
+
+  private changeCameraToFinal(){
+    Laya.Tween.clearAll(this._camera);
+    Laya.Tween.to(this._camera, { fieldOfView: 40 }, 1500, Laya.Ease.linearIn);
+  }
+
+
 
 
 

@@ -1,7 +1,10 @@
 import { Configuration } from "../../Data/Configuration";
 import { Constants } from "../../Data/Constants";
+import { MiniGameManager } from "../../Data/MiniGameManager";
+import { SdkUitl } from "../../Util/SdkUitl";
 import AudioManager from "../Singleton/AudioManager";
 import GameManager from "../Singleton/GameManager";
+import { ShopManager } from "../Singleton/ShopManager";
 import { PanelBase, UITYpes } from "../UI/PanelBase";
 
 
@@ -12,6 +15,10 @@ export default class GamePage extends Laya.Script {
   private _panelLayer: Laya.Box;
   private _popupLayer: Laya.Box;
   private _tipLayer: Laya.Box;
+  private _effectLayer: Laya.Box;
+
+  /** @prop {name:coin,tips:"预制体对象",type:Prefab}*/
+  coin: Laya.Prefab;
 
   /** @prop {name:homePage,tips:"预制体对象",type:Prefab}*/
   homePage: Laya.Prefab;
@@ -28,6 +35,18 @@ export default class GamePage extends Laya.Script {
   /** @prop {name:loadingPage,tips:"预制体对象",type:Prefab}*/
   loadingPage: Laya.Prefab;
 
+  /** @prop {name:shopPage,tips:"预制体对象",type:Prefab}*/
+  shopPage: Laya.Prefab;
+
+  /** @prop {name:infoPage,tips:"预制体对象",type:Prefab}*/
+  infoPage: Laya.Prefab;
+
+  /** @prop {name:settingPage,tips:"预制体对象",type:Prefab}*/
+  settingPage: Laya.Prefab;
+
+  /** @prop {name:coinEffectPage,tips:"预制体对象",type:Prefab}*/
+  coinEffectPage: Laya.Prefab;
+
   private dictPanelMap = new Map<string, Laya.Image>();
 
   constructor() {
@@ -38,34 +57,27 @@ export default class GamePage extends Laya.Script {
   onAwake() {
 
     AudioManager.instance().loadFromCache();
+    ShopManager.instance().loadFromCache();
     this._panelLayer = this.owner.getChildByName("PanelLayer") as Laya.Box;
     this._popupLayer = this.owner.getChildByName("PopupLayer") as Laya.Box;
     this._tipLayer = this.owner.getChildByName("TipLayer") as Laya.Box;
-
+    this._effectLayer = this.owner.getChildByName("EffectLayer") as Laya.Box;
   }
 
   onStart() {
-    let level = this.loadLevelFromCache();
+    let level = Math.floor(MiniGameManager.instance().getSceneLevel() / 3) + 1;
+    level = level % 7 == 0 ? 1 : level % 7;
     this.showPage(Constants.UIPage.loading);
     GameManager.instance().loadLevel(level).then(() => {
       this.hidePage(Constants.UIPage.loading, () => {
         this.showPage(Constants.UIPage.home, null);
+        this.showPage(Constants.UIPage.info, null, true,true, true);
+        SdkUitl.loadVideoRewardAd();
       });
-      console.log("init scene");
-
     });
   }
 
-  private loadLevelFromCache() {
-    const level = Configuration.instance().getConfigData(Constants.LevelTick);
-    let scene_level: number
-    if (level) {
-      scene_level = JSON.parse(level);
-    } else {
-      scene_level = 1;
-    }
-    return scene_level;
-  }
+
 
   public hidePage(name: string, cb?: Function) {
     if (this.dictPanelMap.has(name)) {
@@ -91,8 +103,8 @@ export default class GamePage extends Laya.Script {
       const panel = this.dictPanelMap.get(name);
       const comp = panel.getComponent(PanelBase);
       const parent = this.getParent(comp.type);
-      parent.active = true;
       parent.addChild(panel);
+      parent.active = true;
       if (comp && comp['show']) {
         comp['show'].apply(comp, args);
       }
@@ -131,6 +143,8 @@ export default class GamePage extends Laya.Script {
         return this._popupLayer;
       case UITYpes.TIP:
         return this._tipLayer;
+      case UITYpes.EFFECT:
+        return this._effectLayer;
     }
   }
 
@@ -146,7 +160,19 @@ export default class GamePage extends Laya.Script {
         return this.resultPage;
       case Constants.UIPage.loading:
         return this.loadingPage
+      case Constants.UIPage.shop:
+        return this.shopPage;
+      case Constants.UIPage.info:
+        return this.infoPage;
+      case Constants.UIPage.setting:
+        return this.settingPage;
+      case Constants.UIPage.coinEffect:
+        return this.coinEffectPage;
     }
+  }
+
+  public getCoinPrefab(){
+    return this.coin;
   }
 
 

@@ -1,0 +1,17 @@
+{
+  "code": "import GamePage from \"./script/Pages/GamePage\";\r\nimport LoadingPage from \"./script/Pages/LoadingPage\";\r\nimport Home from \"./script/UI/Home\";\r\nimport MoneyInfo from \"./script/UI/Compoments/MoneyInfo\";\r\nimport Info from \"./script/UI/Info\";\r\nimport Loading from \"./script/UI/Loading\";\r\nimport PlankShopItem from \"./script/UI/Compoments/PlankShopItem\";\r\nimport Playing from \"./script/UI/Playing\";\r\nimport Relife from \"./script/UI/Relife\";\r\nimport RankItem from \"./script/UI/Compoments/RankItem\";\r\nimport Result from \"./script/UI/Result\";\r\nimport Shop from \"./script/UI/Shop\";\r\nexport default class GameConfig {\r\n    constructor() {\r\n    }\r\n    static init() {\r\n        var reg = Laya.ClassUtils.regClass;\r\n        reg(\"script/Pages/GamePage.ts\", GamePage);\r\n        reg(\"script/Pages/LoadingPage.ts\", LoadingPage);\r\n        reg(\"script/UI/Home.ts\", Home);\r\n        reg(\"script/UI/Compoments/MoneyInfo.ts\", MoneyInfo);\r\n        reg(\"script/UI/Info.ts\", Info);\r\n        reg(\"script/UI/Loading.ts\", Loading);\r\n        reg(\"script/UI/Compoments/PlankShopItem.ts\", PlankShopItem);\r\n        reg(\"script/UI/Playing.ts\", Playing);\r\n        reg(\"script/UI/Relife.ts\", Relife);\r\n        reg(\"script/UI/Compoments/RankItem.ts\", RankItem);\r\n        reg(\"script/UI/Result.ts\", Result);\r\n        reg(\"script/UI/Shop.ts\", Shop);\r\n    }\r\n}\r\nGameConfig.width = 750;\r\nGameConfig.height = 1334;\r\nGameConfig.scaleMode = \"fixedwidth\";\r\nGameConfig.screenMode = \"none\";\r\nGameConfig.alignV = \"top\";\r\nGameConfig.alignH = \"center\";\r\nGameConfig.startScene = \"Scenes/Start.scene\";\r\nGameConfig.sceneRoot = \"\";\r\nGameConfig.debug = false;\r\nGameConfig.stat = true;\r\nGameConfig.physicsDebug = false;\r\nGameConfig.exportSceneToJson = true;\r\nGameConfig.init();\r\n",
+  "references": [
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Pages/GamePage.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/Pages/LoadingPage.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Home.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Compoments/MoneyInfo.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Info.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Loading.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Compoments/PlankShopItem.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Playing.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Relife.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Compoments/RankItem.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Result.ts",
+    "D:/WorkSpace/Laya2.6.1/ShortcutRun/src/script/UI/Shop.ts"
+  ]
+}
